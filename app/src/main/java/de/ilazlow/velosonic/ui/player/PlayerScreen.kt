@@ -63,6 +63,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -73,6 +74,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
@@ -132,6 +134,15 @@ fun PlayerScreen(
     var scrubFraction by remember { mutableStateOf(0f) }
     var showLyrics by remember { mutableStateOf(false) }
     var showQueue by remember { mutableStateOf(false) }
+    // Reading synced lyrics is a hands-off, screen-watching activity — mirrors iOS keeping the
+    // display on for its lyrics view unconditionally, independent of Settings → Playback → Keep
+    // Screen Awake (that toggle governs the player generally; someone leaving it off to save
+    // battery during normal playback still doesn't want the screen dimming mid-lyric).
+    val lyricsView = LocalView.current
+    DisposableEffect(showLyrics) {
+        lyricsView.keepScreenOn = showLyrics
+        onDispose { lyricsView.keepScreenOn = false }
+    }
     var showOverflowMenu by remember { mutableStateOf(false) }
     var showAddToPlaylist by remember { mutableStateOf(false) }
     var showSongInfo by remember { mutableStateOf(false) }
@@ -183,6 +194,7 @@ fun PlayerScreen(
                 PlayerLyricsView(
                     state = lyricsState,
                     positionMs = nowPlaying.positionMs,
+                    isPlaying = nowPlaying.isPlaying,
                     onSeek = viewModel::seekToLyricLine,
                     sparklesEnabled = lyricsSparklesEnabled,
                     modifier = Modifier.fillMaxSize()
@@ -365,7 +377,6 @@ fun PlayerScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(top = 20.dp),
-            horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically
         ) {
             // Shuffle/prev/next/repeat are all meaningless for a live stream (there's no queue
@@ -373,6 +384,13 @@ fun PlayerScreen(
             // mirroring iOS rendering them as plain (non-Button) images at 0.25 opacity rather
             // than merely graying out a still-tappable control.
             val transportEnabled = !nowPlaying.isPlayingRadio
+            // Gaps are weighted, not fixed dp, so they compress on a narrow width instead of
+            // forcing a fixed minimum row width — fixed Spacers here previously pushed this row's
+            // total width past the screen edge on narrow layouts (e.g. a foldable's cover screen),
+            // since nothing in a plain fixed-Spacer Row can shrink to fit. The five icon buttons
+            // stay fixed-size (there's no meaningful smaller size for a tap target); only the
+            // spacing between them flexes, keeping the roughly 1:1.6 side/center gap ratio the
+            // original fixed 20dp/32dp Spacers had.
             TransportIconButton(onClick = viewModel::toggleShuffle, size = 44.dp, enabled = transportEnabled) {
                 Icon(
                     Icons.Filled.Shuffle,
@@ -382,11 +400,11 @@ fun PlayerScreen(
                     modifier = Modifier.size(20.dp)
                 )
             }
-            Spacer(modifier = Modifier.width(20.dp))
+            Spacer(modifier = Modifier.weight(1f))
             TransportIconButton(onClick = viewModel::skipToPrevious, size = 44.dp, enabled = transportEnabled) {
                 Icon(Icons.Filled.FastRewind, contentDescription = null, tint = Color.White.copy(alpha = if (transportEnabled) 1f else 0.25f), modifier = Modifier.size(28.dp))
             }
-            Spacer(modifier = Modifier.width(32.dp))
+            Spacer(modifier = Modifier.weight(1.6f))
             TransportIconButton(onClick = viewModel::togglePlayPause, size = 60.dp) {
                 Icon(
                     imageVector = if (nowPlaying.isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
@@ -395,11 +413,11 @@ fun PlayerScreen(
                     modifier = Modifier.size(50.dp)
                 )
             }
-            Spacer(modifier = Modifier.width(32.dp))
+            Spacer(modifier = Modifier.weight(1.6f))
             TransportIconButton(onClick = viewModel::skipToNext, size = 44.dp, enabled = transportEnabled) {
                 Icon(Icons.Filled.FastForward, contentDescription = null, tint = Color.White.copy(alpha = if (transportEnabled) 1f else 0.25f), modifier = Modifier.size(28.dp))
             }
-            Spacer(modifier = Modifier.width(20.dp))
+            Spacer(modifier = Modifier.weight(1f))
             TransportIconButton(onClick = viewModel::cycleRepeatMode, size = 44.dp, enabled = transportEnabled) {
                 Icon(
                     imageVector = if (nowPlaying.repeatMode == Player.REPEAT_MODE_ONE) Icons.Filled.RepeatOne else Icons.Filled.Repeat,

@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -30,6 +31,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import de.ilazlow.velosonic.ui.common.CoverArtTile
+import de.ilazlow.velosonic.ui.common.LibrarySearchField
 
 /** Mirrors LibraryRadioView.swift's RadioStationRow: tap starts the station (or toggles pause if
  *  it's already the current one), artwork via the `ra-{subsonicId}` cover-art id convention
@@ -40,6 +42,29 @@ fun RadioScreen(viewModel: RadioViewModel = hiltViewModel()) {
     val stations by viewModel.stations.collectAsStateWithLifecycle()
     val nowPlaying by viewModel.nowPlaying.collectAsStateWithLifecycle()
     val serverNames by viewModel.serverNames.collectAsStateWithLifecycle()
+    val searchText by viewModel.searchText.collectAsStateWithLifecycle()
+
+    Column(modifier = Modifier.fillMaxSize()) {
+        LibrarySearchField(value = searchText, onValueChange = viewModel::onSearchTextChange)
+
+        if (stations.isEmpty()) {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Icon(
+                        imageVector = Icons.Filled.Radio,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(48.dp)
+                    )
+                    Text(
+                        text = if (searchText.isBlank()) "No radio stations" else "No results for \"$searchText\"",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+            return@Column
+        }
 
     LazyColumn {
         items(stations, key = { it.id }) { station ->
@@ -123,5 +148,6 @@ fun RadioScreen(viewModel: RadioViewModel = hiltViewModel()) {
                 )
             }
         }
+    }
     }
 }

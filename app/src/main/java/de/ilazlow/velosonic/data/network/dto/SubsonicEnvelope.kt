@@ -8,6 +8,14 @@ import kotlinx.serialization.Serializable
  * iOS client's ResponseData 1:1 rather than splitting per-endpoint DTOs, since Subsonic wraps
  * every response the same way regardless of which fields are actually populated.
  */
+/** Present when [ResponseDataDto.status] is "failed" — e.g. `{"code":40,"message":"Wrong
+ *  username or password"}`. */
+@Serializable
+data class SubsonicErrorDto(
+    val code: Int? = null,
+    val message: String? = null
+)
+
 @Serializable
 data class ResponseDataDto(
     val status: String = "",
@@ -15,6 +23,7 @@ data class ResponseDataDto(
     val type: String? = null,
     /** OpenSubsonic extension: server software version. */
     val serverVersion: String? = null,
+    val error: SubsonicErrorDto? = null,
     val album: AlbumDetailDto? = null,
     val albumList2: AlbumListDto? = null,
     val searchResult3: SearchResult3NodeDto? = null,

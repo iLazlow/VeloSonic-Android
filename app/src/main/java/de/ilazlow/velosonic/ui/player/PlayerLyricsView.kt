@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -35,9 +36,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -78,16 +81,24 @@ import kotlin.math.sin
 fun PlayerLyricsView(
     state: LyricsUiState,
     positionMs: Long,
+    isPlaying: Boolean,
     onSeek: (Int) -> Unit,
     sparklesEnabled: Boolean = true,
     modifier: Modifier = Modifier
 ) {
+    // The authoritative positionMs only ticks once a second (see PlaybackEngine's ticker) — driving
+    // the per-word/per-character sweep straight off it made the sweep visibly jump once a second
+    // instead of gliding. This extrapolates smoothly by elapsed frame time between ticks and
+    // re-syncs to the authoritative value the instant a fresh one arrives, so drift never
+    // accumulates beyond a single second.
+    val smoothedPositionMs = rememberSmoothedPositionMs(positionMs, isPlaying)
+
     Box(modifier = modifier.fillMaxSize()) {
         when (state) {
             is LyricsUiState.Loading -> CenteredMessage(Modifier.fillMaxSize(), showSpinner = true, text = "Loading lyrics…")
             is LyricsUiState.Empty -> CenteredMessage(Modifier.fillMaxSize(), showSpinner = false, text = "No lyrics available")
             is LyricsUiState.Loaded -> when (val content = state.content) {
-                is LyricsContent.Synced -> SyncedLyrics(content, positionMs, onSeek, sparklesEnabled, Modifier.fillMaxSize())
+                is LyricsContent.Synced -> SyncedLyrics(content, smoothedPositionMs, onSeek, sparklesEnabled, Modifier.fillMaxSize())
                 is LyricsContent.Plain -> PlainLyrics(content, Modifier.fillMaxSize())
             }
         }
@@ -109,6 +120,27 @@ fun PlayerLyricsView(
     }
 }
 
+/** Extrapolates a per-frame position between the once-a-second authoritative ticks, restarting
+ *  its baseline (and thereby snapping back in sync) every time [positionMs] actually changes —
+ *  a seek, a track change, or the next tick, whichever comes first. Frozen while paused so the
+ *  sweep doesn't keep gliding on its own. */
+@Composable
+private fun rememberSmoothedPositionMs(positionMs: Long, isPlaying: Boolean): Long {
+    var smoothed by remember { mutableLongStateOf(positionMs) }
+    LaunchedEffect(positionMs, isPlaying) {
+        smoothed = positionMs
+        if (!isPlaying) return@LaunchedEffect
+        var startFrameNanos = -1L
+        while (true) {
+            withFrameNanos { frameNanos ->
+                if (startFrameNanos < 0) startFrameNanos = frameNanos
+                smoothed = positionMs + (frameNanos - startFrameNanos) / 1_000_000
+            }
+        }
+    }
+    return smoothed
+}
+
 @Composable
 private fun StatusBadges(
     source: LyricsSourceKind,
@@ -117,7 +149,14 @@ private fun StatusBadges(
     isAiSynthesized: Boolean,
     modifier: Modifier = Modifier
 ) {
-    Row(modifier = modifier, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+    // Scrolls instead of wrapping/clipping on a narrow width (e.g. a foldable's cover screen) —
+    // up to 3 pills (source + word-timing + AI-synthesized) can appear at once, and without this
+    // a too-narrow Row squeezed the last pill's Text down to a width so tight its label wrapped
+    // one word per line, making the pill render tall/portrait instead of its normal flat shape.
+    Row(
+        modifier = modifier.horizontalScroll(rememberScrollState()),
+        horizontalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
         if (source == LyricsSourceKind.RADIANT) {
             RadiantBadgePill()
         } else {
@@ -153,7 +192,14 @@ private fun StatusBadgePill(icon: ImageVector, label: String) {
             .padding(horizontal = 10.dp, vertical = 5.dp)
     ) {
         Icon(icon, contentDescription = null, tint = Color.White.copy(alpha = 0.85f), modifier = Modifier.size(12.dp))
-        Text(text = label, color = Color.White.copy(alpha = 0.85f), fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+        Text(
+            text = label,
+            color = Color.White.copy(alpha = 0.85f),
+            fontSize = 11.sp,
+            fontWeight = FontWeight.SemiBold,
+            maxLines = 1,
+            softWrap = false
+        )
     }
 }
 
@@ -177,7 +223,14 @@ private fun RadiantBadgePill() {
             .padding(horizontal = 10.dp, vertical = 5.dp)
     ) {
         Icon(Icons.Filled.AutoAwesome, contentDescription = null, tint = Color.White.copy(alpha = 0.95f), modifier = Modifier.size(12.dp))
-        Text(text = "Radiant Lyrics", color = Color.White.copy(alpha = 0.95f), fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+        Text(
+            text = "Radiant Lyrics",
+            color = Color.White.copy(alpha = 0.95f),
+            fontSize = 11.sp,
+            fontWeight = FontWeight.SemiBold,
+            maxLines = 1,
+            softWrap = false
+        )
     }
 }
 
@@ -422,19 +475,25 @@ private fun SweepWord(word: String, fraction: Float, sparklesEnabled: Boolean) {
 private fun androidx.compose.ui.graphics.drawscope.ContentDrawScope.drawSweepSparkle(x: Float, y: Float) {
     val t = (System.nanoTime() / 1_000_000_000.0)
     val pulse = 0.7f + 0.3f * sin(t * 6).toFloat()
-    val glowRadius = 8f * pulse
-    drawCircle(color = SPARK_COLOR.copy(alpha = 0.55f), radius = glowRadius, center = Offset(x, y))
-    drawCircle(color = Color.White, radius = 2.2f, center = Offset(x, y))
-    val particleCount = 5
-    for (i in 0 until particleCount) {
-        val seed = i * 2.3
-        val life = ((t * 1.4 + seed) % 1.0).toFloat()
-        val angle = seed * 2.1
-        val radius = 4f + life * 14f
-        val px = x + (cos(angle) * radius).toFloat()
-        val py = y + (sin(angle) * radius * 0.6).toFloat() - life * 14f
-        val opacity = (1f - life).coerceIn(0f, 1f)
-        val dotSize = (3.5f * (1f - life * 0.55f)).coerceAtLeast(0.5f)
-        drawCircle(color = SPARK_COLOR.copy(alpha = opacity), radius = dotSize, center = Offset(px, py))
+    val glowRadius = 9f * pulse
+    drawCircle(color = SPARK_COLOR.copy(alpha = 0.6f), radius = glowRadius, center = Offset(x, y))
+    drawCircle(color = Color.White, radius = 2.4f, center = Offset(x, y))
+    // Two staggered emission waves at golden-angle spacing (≈2.399 rad) so particles fill in evenly
+    // rather than clumping — more of them, and each wave's phase offset keeps the trail dense
+    // instead of leaving a visible gap between bursts.
+    val particleCount = 14
+    for (wave in 0..1) {
+        val wavePhase = wave * 0.5
+        for (i in 0 until particleCount) {
+            val seed = i * 2.399963
+            val life = ((t * 1.4 + wavePhase + seed) % 1.0).toFloat()
+            val angle = seed * 2.1
+            val radius = 4f + life * 16f
+            val px = x + (cos(angle) * radius).toFloat()
+            val py = y + (sin(angle) * radius * 0.6).toFloat() - life * 16f
+            val opacity = (1f - life).coerceIn(0f, 1f) * 0.9f
+            val dotSize = (3.2f * (1f - life * 0.55f)).coerceAtLeast(0.5f)
+            drawCircle(color = SPARK_COLOR.copy(alpha = opacity), radius = dotSize, center = Offset(px, py))
+        }
     }
 }

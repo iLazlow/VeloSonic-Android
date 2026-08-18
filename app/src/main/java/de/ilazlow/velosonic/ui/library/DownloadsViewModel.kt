@@ -12,6 +12,8 @@ import de.ilazlow.velosonic.data.db.TrackEntity
 import de.ilazlow.velosonic.data.download.DownloadRepository
 import de.ilazlow.velosonic.data.network.CoverArtUrlResolver
 import de.ilazlow.velosonic.data.sync.compositeId
+import de.ilazlow.velosonic.domain.goToArtistTarget
+import de.ilazlow.velosonic.playback.PlaybackController
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
@@ -19,11 +21,16 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import javax.inject.Inject
 
+/** Groups downloaded tracks by their resolved artist route id (falling back to the artist's name
+ *  alone when no id resolves) rather than raw `artistName` string equality — matches iOS's own
+ *  grouping and, unlike a bare name string, carries enough to actually navigate to the artist. */
+data class DownloadedArtistGroup(val routeId: String?, val name: String, val count: Int)
+
 data class DownloadsUiState(
     val playlists: List<PlaylistEntity> = emptyList(),
     val albums: List<AlbumEntity> = emptyList(),
     val songs: List<TrackEntity> = emptyList(),
-    val artists: List<Pair<String, Int>> = emptyList()
+    val artists: List<DownloadedArtistGroup> = emptyList()
 )
 
 /**
@@ -38,7 +45,8 @@ class DownloadsViewModel @Inject constructor(
     private val libraryRepository: LibraryRepository,
     private val downloadRepository: DownloadRepository,
     private val standaloneDownloadDao: StandaloneDownloadDao,
-    private val coverArtUrlResolver: CoverArtUrlResolver
+    private val coverArtUrlResolver: CoverArtUrlResolver,
+    private val playbackController: PlaybackController
 ) : ViewModel() {
     val uiState: StateFlow<DownloadsUiState> = combine(downloadRepository.downloads, libraryRepository.observePlaylists()) { downloads, playlists ->
         downloads to playlists
@@ -68,9 +76,11 @@ class DownloadsViewModel @Inject constructor(
             }
 
         val artists = downloadedTracks
-            .groupBy { it.artistName }
-            .map { (name, list) -> name to list.size }
-            .sortedBy { it.first.lowercase() }
+            .groupBy { it.goToArtistTarget()?.first ?: it.artistName }
+            .map { (_, list) ->
+                DownloadedArtistGroup(routeId = list.first().goToArtistTarget()?.first, name = list.first().artistName, count = list.size)
+            }
+            .sortedBy { it.name.lowercase() }
 
         val fullyDownloadedPlaylists = playlists.filter { playlist ->
             playlist.trackIds.isNotEmpty() && playlist.trackIds.all { compositeId(playlist.serverHost, it) in completedIds }
@@ -83,4 +93,11 @@ class DownloadsViewModel @Inject constructor(
         coverArtUrlResolver.urlFor(serverHost, coverArt, size)
 
     fun removeDownload(trackId: String) = downloadRepository.removeDownload(trackId)
+
+    /** Mirrors iOS's downloaded-Songs row tap — plays the full downloaded-songs list starting at
+     *  the tapped track, same as Library's own Songs/Favorites rows. */
+    fun playSongs(tracks: List<TrackEntity>, track: TrackEntity) {
+        val index = tracks.indexOfFirst { it.id == track.id }
+        if (index >= 0) playbackController.playQueue(tracks, index)
+    }
 }

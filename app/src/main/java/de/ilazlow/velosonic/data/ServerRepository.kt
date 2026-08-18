@@ -16,6 +16,7 @@ import de.ilazlow.velosonic.data.sync.SyncMode
 import de.ilazlow.velosonic.data.sync.SyncNowWorker
 import de.ilazlow.velosonic.domain.ServerType
 import kotlinx.coroutines.flow.Flow
+import retrofit2.HttpException
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -66,17 +67,32 @@ class ServerRepository @Inject constructor(
         hostInput: String,
         username: String,
         password: String,
-        name: String
+        name: String,
+        onLog: (String) -> Unit = {}
     ): AddServerResult {
         val host = hostInput.trim().trimEnd('/')
         val auth = NavidromeAuth.generateAuth(password)
+        onLog("Connecting to $host as $username")
+        onLog("Generated auth token (${auth.token.length} chars), salt (${auth.salt.length} chars)")
 
         val pingData = try {
             val url = SubsonicUrlBuilder.build(host, "ping", username, auth.token, auth.salt)
-            api.get(url).subsonicResponse
+            onLog("Ping ${redactUrl(url)}")
+            val response = api.get(url).subsonicResponse
+            onLog(
+                "Ping response: status=${response?.status ?: "null"}" +
+                    (response?.error?.let { " error=${it.code} \"${it.message}\"" } ?: "")
+            )
+            response
         } catch (e: IllegalArgumentException) {
+            onLog("Invalid host: ${e.message}")
             return AddServerResult.Failure(AddServerError.INVALID_HOST)
+        } catch (e: HttpException) {
+            val body = e.response()?.errorBody()?.string()?.take(300)
+            onLog("Ping failed: HTTP ${e.code()} ${e.message()}" + (body?.let { " body=$it" } ?: ""))
+            null
         } catch (e: Exception) {
+            onLog("Ping failed: ${e::class.simpleName}: ${e.message}")
             null
         }
 
@@ -86,11 +102,15 @@ class ServerRepository @Inject constructor(
 
         val detectedType = pingData.type?.takeIf { it.isNotEmpty() }
             ?.let { ServerType.fromServerResponse(it) }
-            ?: detectOpenSubsonicFallback(host, username, auth.token, auth.salt)
+            ?: detectOpenSubsonicFallback(host, username, auth.token, auth.salt, onLog)
         val detectedVersion = pingData.serverVersion
+        onLog("Detected server type=${detectedType.raw} version=${detectedVersion ?: "unknown"}")
 
         val navToken = if (detectedType == ServerType.NAVIDROME) {
-            fetchNavidromeJwt(host, username, password)
+            onLog("Fetching Navidrome JWT")
+            fetchNavidromeJwt(host, username, password).also { token ->
+                onLog(if (token != null) "JWT fetched (${token.length} chars)" else "JWT fetch failed")
+            }
         } else {
             null
         }
@@ -111,6 +131,7 @@ class ServerRepository @Inject constructor(
         )
         serverConfigDao.upsert(config)
         serverOrderStore.recordIfNew(host)
+        onLog("Server saved")
         // Runs as a foreground-service WorkManager job (SyncNowWorker), not a plain
         // appScope.launch — mirrors the iOS client's "background sync starts automatically once a
         // server is added" behavior, but a bare coroutine has no foreground priority: backgrounding
@@ -119,6 +140,11 @@ class ServerRepository @Inject constructor(
         SyncNowWorker.enqueue(context, host, SyncMode.INITIAL)
         return AddServerResult.Success(config)
     }
+
+    /** Masks the `t=`/`s=` (token/salt) query params before a URL is ever logged — mirrors iOS's
+     *  login debug console, which never prints full credentials either. */
+    private fun redactUrl(url: String): String =
+        url.replace(Regex("([?&][ts]=)[^&]*"), "$1***")
 
     /** Edit path for an already-saved server. When [hostInput] resolves to the same host as
      *  [originalHost], this is just [addServer] again (its upsert-by-host naturally overwrites
@@ -134,14 +160,16 @@ class ServerRepository @Inject constructor(
         username: String,
         password: String,
         name: String,
-        onMigrationProgress: (Float) -> Unit = {}
+        onMigrationProgress: (Float) -> Unit = {},
+        onLog: (String) -> Unit = {}
     ): AddServerResult {
         val newHost = hostInput.trim().trimEnd('/')
         if (newHost != originalHost) {
+            onLog("Host changed: $originalHost -> $newHost — migrating local data first")
             serverMigrationManager.migrate(originalHost, newHost, username, onMigrationProgress)
             serverOrderStore.replace(originalHost, newHost)
         }
-        val result = addServer(newHost, username, password, name)
+        val result = addServer(newHost, username, password, name, onLog)
         if (result is AddServerResult.Success && newHost != originalHost) {
             serverConfigDao.getByHost(originalHost)?.let { serverConfigDao.delete(it) }
         }
@@ -152,12 +180,14 @@ class ServerRepository @Inject constructor(
         host: String,
         username: String,
         token: String,
-        salt: String
+        salt: String,
+        onLog: (String) -> Unit = {}
     ): ServerType {
         val extOk = try {
             val url = SubsonicUrlBuilder.build(host, "getOpenSubsonicExtensions", username, token, salt)
             api.get(url).subsonicResponse?.status == "ok"
         } catch (e: Exception) {
+            onLog("OpenSubsonic extension check failed: ${e.message}")
             false
         }
         return if (extOk) ServerType.OPEN_SUBSONIC else ServerType.SUBSONIC

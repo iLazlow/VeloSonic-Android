@@ -52,14 +52,14 @@ import de.ilazlow.velosonic.ui.library.AlbumsScreen
 import de.ilazlow.velosonic.ui.library.ArtistsScreen
 import de.ilazlow.velosonic.ui.library.DownloadsScreen
 import de.ilazlow.velosonic.ui.library.FavoritesScreen
-import de.ilazlow.velosonic.ui.library.GenreTracksScreen
+import de.ilazlow.velosonic.ui.library.GenreAlbumsScreen
 import de.ilazlow.velosonic.ui.library.GenresScreen
 import de.ilazlow.velosonic.ui.library.LibraryScreen
 import de.ilazlow.velosonic.ui.library.RadioScreen
 import de.ilazlow.velosonic.ui.library.SongsScreen
 import de.ilazlow.velosonic.ui.navigation.AlbumDetailRoute
 import de.ilazlow.velosonic.ui.navigation.ArtistDetailRoute
-import de.ilazlow.velosonic.ui.navigation.GenreTracksRoute
+import de.ilazlow.velosonic.ui.navigation.GenreAlbumsRoute
 import de.ilazlow.velosonic.ui.navigation.HomeRoute
 import de.ilazlow.velosonic.ui.navigation.LibraryAlbumsRoute
 import de.ilazlow.velosonic.ui.navigation.LibraryArtistsRoute
@@ -424,18 +424,28 @@ fun AppShell(deepLinkViewModel: DeepLinkViewModel = hiltViewModel()) {
                     }
                     composable<LibrarySongsRoute> { SongsScreen() }
                     composable<LibraryGenresRoute> {
-                        GenresScreen(onGenreClick = { navController.navigate(GenreTracksRoute(it)) })
+                        GenresScreen(onGenreClick = { navController.navigate(GenreAlbumsRoute(it)) })
                     }
-                    composable<LibraryFavoritesRoute> { FavoritesScreen() }
+                    composable<GenreAlbumsRoute> {
+                        GenreAlbumsScreen(
+                            onBack = { navController.navigateUp() },
+                            onAlbumClick = { navController.navigate(AlbumDetailRoute(it)) }
+                        )
+                    }
+                    composable<LibraryFavoritesRoute> {
+                        FavoritesScreen(
+                            onArtistClick = { id, name -> navController.navigate(ArtistDetailRoute(id, name)) },
+                            onAlbumClick = { navController.navigate(AlbumDetailRoute(it)) }
+                        )
+                    }
                     composable<LibraryRadioRoute> { RadioScreen() }
                     composable<LibraryDownloadsRoute> {
                         DownloadsScreen(
                             onPlaylistClick = { navController.navigate(PlaylistDetailRoute(it)) },
-                            onAlbumClick = { navController.navigate(AlbumDetailRoute(it)) }
+                            onAlbumClick = { navController.navigate(AlbumDetailRoute(it)) },
+                            onArtistClick = { id, name -> navController.navigate(ArtistDetailRoute(id, name)) }
                         )
                     }
-                    composable<GenreTracksRoute> { GenreTracksScreen() }
-
                     composable<ArtistDetailRoute> {
                         ArtistDetailScreen(
                             onBack = { navController.navigateUp() },

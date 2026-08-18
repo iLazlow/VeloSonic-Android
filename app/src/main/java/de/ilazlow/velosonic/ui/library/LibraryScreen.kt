@@ -1,5 +1,6 @@
 package de.ilazlow.velosonic.ui.library
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -22,12 +23,15 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import de.ilazlow.velosonic.R
 import de.ilazlow.velosonic.ui.navigation.LibraryAlbumsRoute
 import de.ilazlow.velosonic.ui.navigation.LibraryArtistsRoute
@@ -50,9 +54,12 @@ private val libraryEntries = listOf(
 )
 
 @Composable
-fun LibraryScreen(onNavigate: (Any) -> Unit) {
+fun LibraryScreen(onNavigate: (Any) -> Unit, viewModel: LibraryViewModel = hiltViewModel()) {
+    val showRadio by viewModel.showRadio.collectAsStateWithLifecycle()
+    val entries = libraryEntries.filter { it.route != LibraryRadioRoute || showRadio }
+
     LazyColumn {
-        items(libraryEntries) { entry ->
+        items(entries) { entry ->
             LibraryRow(
                 icon = entry.icon,
                 label = stringResource(id = entry.labelRes),
@@ -75,13 +82,14 @@ private fun LibraryRow(icon: ImageVector, label: String, onClick: () -> Unit) {
         Box(
             modifier = Modifier
                 .size(30.dp)
-                .clip(RoundedCornerShape(7.dp)),
+                .clip(RoundedCornerShape(7.dp))
+                .background(MaterialTheme.colorScheme.primary),
             contentAlignment = Alignment.Center
         ) {
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary
+                tint = MaterialTheme.colorScheme.onPrimary
             )
         }
         Text(text = label, style = MaterialTheme.typography.bodyLarge)

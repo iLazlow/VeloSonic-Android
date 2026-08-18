@@ -9,8 +9,11 @@ import de.ilazlow.velosonic.data.db.RadioStationEntity
 import de.ilazlow.velosonic.data.network.CoverArtUrlResolver
 import de.ilazlow.velosonic.playback.NowPlaying
 import de.ilazlow.velosonic.playback.PlaybackController
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import javax.inject.Inject
@@ -22,8 +25,17 @@ class RadioViewModel @Inject constructor(
     private val playbackController: PlaybackController,
     private val coverArtUrlResolver: CoverArtUrlResolver
 ) : ViewModel() {
-    val stations: StateFlow<List<RadioStationEntity>> = libraryRepository.observeRadioStations()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+    private val _searchText = MutableStateFlow("")
+    val searchText: StateFlow<String> = _searchText.asStateFlow()
+
+    fun onSearchTextChange(value: String) {
+        _searchText.value = value
+    }
+
+    val stations: StateFlow<List<RadioStationEntity>> =
+        combine(libraryRepository.observeRadioStations(), _searchText) { stations, query ->
+            if (query.isBlank()) stations else stations.filter { it.name.contains(query, ignoreCase = true) }
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     val nowPlaying: StateFlow<NowPlaying> = playbackController.nowPlaying
 

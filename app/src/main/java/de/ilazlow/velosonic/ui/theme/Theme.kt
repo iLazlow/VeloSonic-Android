@@ -10,7 +10,6 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 
 private val DarkColorScheme = darkColorScheme(
@@ -38,19 +37,7 @@ fun VeloSonicTheme(
     val colorScheme = when {
         dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
             val context = LocalContext.current
-            val scheme = if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-            run {
-                val resId = context.resources.getIdentifier("system_accent1_500", "color", "android")
-                val rawAccent1 = if (resId != 0) Integer.toHexString(context.getColor(resId)) else "N/A"
-                android.util.Log.d(
-                    "ThemeDebug",
-                    "darkTheme=$darkTheme rawAndroidSystemAccent1_500=$rawAccent1 " +
-                        "resolvedPrimary=${Integer.toHexString(scheme.primary.toArgb())} " +
-                        "resolvedSecondary=${Integer.toHexString(scheme.secondary.toArgb())} " +
-                        "resolvedTertiary=${Integer.toHexString(scheme.tertiary.toArgb())}"
-                )
-            }
-            scheme
+            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         }
 
         darkTheme -> DarkColorScheme

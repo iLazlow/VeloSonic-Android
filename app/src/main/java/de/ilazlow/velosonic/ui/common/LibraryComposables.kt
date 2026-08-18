@@ -30,8 +30,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
+import coil3.compose.SubcomposeAsyncImage
 import coil3.gif.AnimatedImageDecoder
 import coil3.request.ImageRequest
 import dagger.hilt.EntryPoint
@@ -202,11 +204,50 @@ fun AlbumGridItem(
     }
 }
 
+/** Circular artist avatar with a Person-icon fallback shown on a null URL *or* a failed load —
+ *  mirrors iOS's `LibraryArtistsView` avatar (real cover art when available, an initial-letter/
+ *  icon placeholder otherwise). Uses [SubcomposeAsyncImage] rather than [CoverArtTile] since it
+ *  needs to react to a load *failure*, not just a null URL — Navidrome always returns a URL for an
+ *  artist id, but that endpoint can still 404 for an artist with no art of its own. */
+@Composable
+fun ArtistAvatar(url: String?, size: Dp, modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier
+            .size(size)
+            .clip(RoundedCornerShape(50))
+            .background(MaterialTheme.colorScheme.surfaceVariant),
+        contentAlignment = Alignment.Center
+    ) {
+        if (url != null) {
+            SubcomposeAsyncImage(
+                model = url,
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxWidth().aspectRatio(1f),
+                error = {
+                    Icon(
+                        imageVector = Icons.Filled.Person,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            )
+        } else {
+            Icon(
+                imageVector = Icons.Filled.Person,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
 @Composable
 fun ArtistListRow(
     name: String,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    avatarUrl: String? = null
 ) {
     Row(
         modifier = modifier
@@ -216,19 +257,7 @@ fun ArtistListRow(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        Box(
-            modifier = Modifier
-                .size(44.dp)
-                .clip(RoundedCornerShape(50))
-                .background(MaterialTheme.colorScheme.surfaceVariant),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                imageVector = Icons.Filled.Person,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
+        ArtistAvatar(url = avatarUrl, size = 44.dp)
         Text(
             text = name,
             style = MaterialTheme.typography.bodyLarge,
@@ -238,13 +267,24 @@ fun ArtistListRow(
     }
 }
 
+/** `m:ss`/`h:mm:ss` track duration — same formatting as `AlbumDetailScreen`'s private
+ *  `formatDuration`, factored out here since Songs/Favorites rows need it too. */
+fun formatTrackDuration(totalSeconds: Int): String {
+    val hours = totalSeconds / 3600
+    val minutes = (totalSeconds % 3600) / 60
+    val seconds = totalSeconds % 60
+    return if (hours > 0) "%d:%02d:%02d".format(hours, minutes, seconds) else "%d:%02d".format(minutes, seconds)
+}
+
 @Composable
 fun TrackListRow(
     title: String,
     subtitle: String,
     coverArtUrl: String?,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    isCurrentTrack: Boolean = false,
+    trailingContent: (@Composable () -> Unit)? = null
 ) {
     Row(
         modifier = modifier
@@ -255,10 +295,11 @@ fun TrackListRow(
         horizontalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         CoverArtTile(url = coverArtUrl, contentDescription = title, modifier = Modifier.size(48.dp))
-        Column {
+        Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = title,
                 style = MaterialTheme.typography.bodyLarge,
+                color = if (isCurrentTrack) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
@@ -269,6 +310,11 @@ fun TrackListRow(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
+        }
+        if (trailingContent != null) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                trailingContent()
+            }
         }
     }
 }

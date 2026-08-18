@@ -18,7 +18,7 @@ import kotlinx.serialization.Serializable
 @Serializable object LibraryRadioRoute
 @Serializable object LibraryDownloadsRoute
 
-@Serializable data class GenreTracksRoute(val genre: String)
+@Serializable data class GenreAlbumsRoute(val genre: String)
 
 // Shared detail destinations, reachable from Home and every Library sub-screen
 @Serializable data class ArtistDetailRoute(val artistId: String, val artistName: String)

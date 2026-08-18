@@ -36,6 +36,7 @@ import de.ilazlow.velosonic.playback.ContinuousMixMode
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -238,6 +239,6 @@ class SettingsViewModel @Inject constructor(
      *  falls back to the Login screen once the server table is empty, no navigation call needed
      *  here. */
     fun logout() = viewModelScope.launch {
-        servers.value.forEach { serverRepository.removeServer(it) }
+        serverRepository.observeServers().first().forEach { serverRepository.removeServer(it) }
     }
 }

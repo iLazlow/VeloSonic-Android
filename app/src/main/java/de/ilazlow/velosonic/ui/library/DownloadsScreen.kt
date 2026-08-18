@@ -30,6 +30,9 @@ import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -65,6 +68,7 @@ private enum class DownloadCategory(val title: String) {
 fun DownloadsScreen(
     onPlaylistClick: (String) -> Unit,
     onAlbumClick: (String) -> Unit,
+    onArtistClick: (id: String, name: String) -> Unit,
     viewModel: DownloadsViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -144,8 +148,13 @@ fun DownloadsScreen(
             }
             DownloadCategory.PLAYLISTS -> DownloadedPlaylistsList(state.playlists, viewModel::coverArtUrl, onPlaylistClick)
             DownloadCategory.ALBUMS -> DownloadedAlbumsList(state.albums, viewModel::coverArtUrl, onAlbumClick)
-            DownloadCategory.SONGS -> DownloadedSongsList(state.songs, viewModel::coverArtUrl, viewModel::removeDownload)
-            DownloadCategory.ARTISTS -> DownloadedArtistsList(state.artists)
+            DownloadCategory.SONGS -> DownloadedSongsList(
+                songs = state.songs,
+                coverArtUrl = viewModel::coverArtUrl,
+                onRemove = viewModel::removeDownload,
+                onClick = { track -> viewModel.playSongs(state.songs, track) }
+            )
+            DownloadCategory.ARTISTS -> DownloadedArtistsList(state.artists, onArtistClick)
         }
     }
 
@@ -200,19 +209,44 @@ private fun DownloadedPlaylistsList(playlists: List<PlaylistEntity>, coverArtUrl
     }
 }
 
+private enum class AlbumSizeFilter(val label: String) { ALBUMS("Albums"), SINGLES("Singles") }
+
+/** iOS's `AlbumSizeFilter.singleTrackThreshold` — a release with 2 or fewer tracks counts as a
+ *  single, not an album; an unknown/zero track count (`songCount == null`) is treated as an album. */
+private fun AlbumEntity.isSingle(): Boolean = (songCount ?: Int.MAX_VALUE) <= 2
+
 @Composable
 private fun DownloadedAlbumsList(albums: List<AlbumEntity>, coverArtUrl: (String, String?, Int) -> String?, onClick: (String) -> Unit) {
-    EmptyAwareList(albums.isEmpty(), "No downloaded albums yet.") {
-        items(albums, key = { it.id }) { album ->
-            Row(
-                modifier = Modifier.fillMaxWidth().clickable { onClick(album.id) }.padding(horizontal = 20.dp, vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                CoverArtTile(url = coverArtUrl(album.serverHost, album.coverArt, 150), contentDescription = album.name, modifier = Modifier.size(50.dp).clip(RoundedCornerShape(6.dp)))
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(text = album.name, style = MaterialTheme.typography.bodyLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    Text(text = album.artistName, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
+    var filter by remember { mutableStateOf(AlbumSizeFilter.ALBUMS) }
+    val filtered = remember(albums, filter) {
+        albums.filter { if (filter == AlbumSizeFilter.SINGLES) it.isSingle() else !it.isSingle() }
+    }
+
+    Column(modifier = Modifier.fillMaxSize()) {
+        SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp)) {
+            AlbumSizeFilter.entries.forEachIndexed { index, option ->
+                SegmentedButton(
+                    selected = filter == option,
+                    onClick = { filter = option },
+                    shape = SegmentedButtonDefaults.itemShape(index = index, count = AlbumSizeFilter.entries.size)
+                ) {
+                    Text(option.label)
+                }
+            }
+        }
+        val emptyMessage = if (filter == AlbumSizeFilter.SINGLES) "No downloaded singles yet." else "No downloaded albums yet."
+        EmptyAwareList(filtered.isEmpty(), emptyMessage) {
+            items(filtered, key = { it.id }) { album ->
+                Row(
+                    modifier = Modifier.fillMaxWidth().clickable { onClick(album.id) }.padding(horizontal = 20.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    CoverArtTile(url = coverArtUrl(album.serverHost, album.coverArt, 150), contentDescription = album.name, modifier = Modifier.size(50.dp).clip(RoundedCornerShape(6.dp)))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(text = album.name, style = MaterialTheme.typography.bodyLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Text(text = album.artistName, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    }
                 }
             }
         }
@@ -220,11 +254,16 @@ private fun DownloadedAlbumsList(albums: List<AlbumEntity>, coverArtUrl: (String
 }
 
 @Composable
-private fun DownloadedSongsList(songs: List<TrackEntity>, coverArtUrl: (String, String?, Int) -> String?, onRemove: (String) -> Unit) {
+private fun DownloadedSongsList(
+    songs: List<TrackEntity>,
+    coverArtUrl: (String, String?, Int) -> String?,
+    onRemove: (String) -> Unit,
+    onClick: (TrackEntity) -> Unit
+) {
     EmptyAwareList(songs.isEmpty(), "No individually downloaded songs yet.") {
         items(songs, key = { it.id }) { track ->
             Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp),
+                modifier = Modifier.fillMaxWidth().clickable { onClick(track) }.padding(horizontal = 20.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
@@ -242,15 +281,18 @@ private fun DownloadedSongsList(songs: List<TrackEntity>, coverArtUrl: (String, 
 }
 
 @Composable
-private fun DownloadedArtistsList(artists: List<Pair<String, Int>>) {
+private fun DownloadedArtistsList(artists: List<DownloadedArtistGroup>, onArtistClick: (id: String, name: String) -> Unit) {
     EmptyAwareList(artists.isEmpty(), "No downloaded artists yet.") {
-        items(artists, key = { it.first }) { (name, count) ->
+        items(artists, key = { it.routeId ?: it.name }) { group ->
             Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 10.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .then(if (group.routeId != null) Modifier.clickable { onArtistClick(group.routeId, group.name) } else Modifier)
+                    .padding(horizontal = 20.dp, vertical = 10.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(text = name, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
-                Text(text = "$count songs", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(text = group.name, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(text = "${group.count} songs", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
     }

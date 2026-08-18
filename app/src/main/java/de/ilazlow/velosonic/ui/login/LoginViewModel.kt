@@ -35,7 +35,11 @@ data class LoginUiState(
     val pendingHostChangeConfirm: Boolean = false,
     val isMigrating: Boolean = false,
     val migrationProgress: Float = 0f,
-    @StringRes val errorMessageRes: Int? = null
+    @StringRes val errorMessageRes: Int? = null,
+    /** Step-by-step trace of the last connection attempt — mirrors iOS's inline login debug
+     *  console. Reset at the start of every [LoginViewModel.confirmAndConnect] call, empty until
+     *  the first attempt, so the toggle to reveal it only appears once there's something to see. */
+    val debugLog: List<String> = emptyList()
 ) {
     val canSubmit: Boolean
         get() = host.isNotBlank() && username.isNotBlank() && password.isNotBlank() && !isConnecting && !isConnected && !isMigrating
@@ -91,7 +95,10 @@ class LoginViewModel @Inject constructor(
 
     fun confirmAndConnect() {
         val state = _uiState.value
-        _uiState.update { it.copy(pendingHostChangeConfirm = false, isConnecting = true, errorMessageRes = null) }
+        _uiState.update {
+            it.copy(pendingHostChangeConfirm = false, isConnecting = true, errorMessageRes = null, debugLog = emptyList())
+        }
+        val appendLog: (String) -> Unit = { line -> _uiState.update { it.copy(debugLog = it.debugLog + line) } }
         viewModelScope.launch {
             val result = if (state.isEditMode) {
                 serverRepository.editServer(
@@ -102,14 +109,16 @@ class LoginViewModel @Inject constructor(
                     name = state.serverName,
                     onMigrationProgress = { progress ->
                         _uiState.update { it.copy(isMigrating = true, migrationProgress = progress) }
-                    }
+                    },
+                    onLog = appendLog
                 )
             } else {
                 serverRepository.addServer(
                     hostInput = state.host,
                     username = state.username,
                     password = state.password,
-                    name = state.serverName
+                    name = state.serverName,
+                    onLog = appendLog
                 )
             }
             when (result) {
