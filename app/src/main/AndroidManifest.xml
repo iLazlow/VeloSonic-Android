@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+
+    <application
+        android:name=".VeloSonicApp"
+        android:allowBackup="true"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.VeloSonic">
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:label="@string/app_name"
+            android:launchMode="singleTop"
+            android:theme="@style/Theme.VeloSonic">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <!-- App-link scheme for shared tracks/albums/artists/playlists — mirrors iOS's
+                 CFBundleURLSchemes "velosonic" (a plain custom scheme there too, not a real
+                 Universal Link/associated-domain setup). Shape: velosonic://host[:port]/type/id,
+                 matched against configured servers in MainActivity.handleIntent. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data android:scheme="velosonic" />
+            </intent-filter>
+        </activity>
+        <service
+            android:name=".playback.VeloSonicPlaybackService"
+            android:exported="true"
+            android:foregroundServiceType="mediaPlayback">
+            <intent-filter>
+                <action android:name="androidx.media3.session.MediaSessionService" />
+            </intent-filter>
+        </service>
+        <service
+            android:name=".data.download.VeloSonicDownloadService"
+            android:exported="false"
+            android:foregroundServiceType="dataSync" />
+
+        <!-- WorkManager's own internal service that actually hosts CoroutineWorker.setForeground()
+             calls (SyncNowWorker) — its own library manifest declares no foregroundServiceType at
+             all, and the type passed to ForegroundInfo at runtime must be a subset of what's
+             declared here or the service crashes on startForeground() with an
+             IllegalArgumentException (confirmed live). Declared explicitly to merge-override the
+             library's entry rather than duplicating the whole <service>. -->
+        <service
+            android:name="androidx.work.impl.foreground.SystemForegroundService"
+            android:foregroundServiceType="dataSync"
+            tools:node="merge" />
+
+        <!-- Lets BackupSettingsScreen hand an exported backup zip (written to the app cache
+             dir, see BackupRepository) to another app via Intent.ACTION_SEND — a raw file://
+             Uri isn't shareable outside the app on modern Android. -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+
+        <!-- Disables WorkManager's automatic androidx.startup self-initialization, which would
+             otherwise construct the WorkManager singleton (with the plain-reflection default
+             WorkerFactory) during ContentProvider startup — before Hilt has injected
+             VeloSonicApp.workerFactory, since Application.onCreate() runs after all
+             ContentProviders' onCreate(). That singleton is permanent for the process lifetime,
+             so every @HiltWorker (SyncWorker, LyricsSyncWorker, AudioAnalysisWorker) would
+             silently fail with NoSuchMethodException every time WorkManager actually tried to
+             instantiate one, regardless of workManagerConfiguration being wired correctly.
+             VeloSonicApp.onCreate() now calls WorkManager.initialize(...) manually, after
+             injection has happened. -->
+        <provider
+            android:name="androidx.startup.InitializationProvider"
+            android:authorities="${applicationId}.androidx-startup"
+            android:exported="false"
+            tools:node="merge">
+            <meta-data
+                android:name="androidx.work.WorkManagerInitializer"
+                android:value="androidx.startup"
+                tools:node="remove" />
+        </provider>
+    </application>
+
+</manifest>

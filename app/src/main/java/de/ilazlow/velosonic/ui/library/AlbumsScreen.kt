@@ -1,0 +1,39 @@
+package de.ilazlow.velosonic.ui.library
+
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import de.ilazlow.velosonic.ui.common.AlbumGridItem
+
+@Composable
+fun AlbumsScreen(
+    onAlbumClick: (String) -> Unit,
+    viewModel: AlbumsViewModel = hiltViewModel()
+) {
+    val albums by viewModel.albums.collectAsStateWithLifecycle()
+    val animatedGrid by viewModel.animatedAlbumGridEnabled.collectAsStateWithLifecycle()
+
+    LazyVerticalGrid(
+        columns = GridCells.Adaptive(minSize = 140.dp),
+        contentPadding = PaddingValues(16.dp),
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        items(albums, key = { it.id }) { album ->
+            AlbumGridItem(
+                title = album.name,
+                artist = album.artistName,
+                coverArtUrl = viewModel.coverArtUrl(album.serverHost, album.coverArt),
+                onClick = { onAlbumClick(album.id) },
+                animate = animatedGrid
+            )
+        }
+    }
+}

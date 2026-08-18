@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <!-- Exported database backups (see BackupRepository) live directly in the app cache root,
+         not a subdirectory, so a plain cache-path covering the whole root is enough. -->
+    <cache-path name="backups" path="." />
+    <!-- Debug session logs (see LogManager) live under files/logs/. -->
+    <files-path name="logs" path="logs/" />
+</paths>

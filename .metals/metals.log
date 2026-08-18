@@ -1,0 +1,26 @@
+2026.08.10 02:43:33 INFO  Started: Metals version 1.6.8 in folders 'C:\Users\Karr5\AndroidStudioProjects\VeloSonic' for client Visual Studio Code 1.132.0.
+2026.08.10 02:43:33 INFO  Memory monitor started
+2026.08.10 02:43:33 WARN  Using H2 2.4.240 which is newer than the version Flyway has been verified with. The latest verified version of H2 is 2.3.232.
+2026.08.10 02:43:34 WARN  no build target for: C:\Users\Karr5\AppData\Local\Temp\claude\c--Users-Karr5-AndroidStudioProjects-VeloSonic\8514abaf-41f8-48e0-acbd-3a02cad05bea\scratchpad\id3\androidx\media3\extractor\metadata\id3\CommentFrame.java
+2026.08.10 02:43:34 WARN  no build target for: C:\Users\Karr5\AppData\Local\Temp\claude\c--Users-Karr5-AndroidStudioProjects-VeloSonic\8514abaf-41f8-48e0-acbd-3a02cad05bea\scratchpad\id3\androidx\media3\extractor\metadata\id3\Id3Decoder.java
+2026.08.10 02:43:34 WARN  no build target for: C:\Users\Karr5\AppData\Local\Temp\claude\c--Users-Karr5-AndroidStudioProjects-VeloSonic\8514abaf-41f8-48e0-acbd-3a02cad05bea\scratchpad\id3\androidx\media3\extractor\metadata\id3\BinaryFrame.java
+2026.08.10 02:43:34 WARN  Using H2 2.4.240 which is newer than the version Flyway has been verified with. The latest verified version of H2 is 2.3.232.
+2026.08.10 02:46:00 INFO  no build target found for c:\Users\Karr5\AppData\Local\Temp\claude\c--Users-Karr5-AndroidStudioProjects-VeloSonic\8514abaf-41f8-48e0-acbd-3a02cad05bea\scratchpad\id3\androidx\media3\extractor\metadata\id3\Id3Decoder.java. Using fallback presentation compiler.
+2026.08.10 02:46:08 INFO  no build target found for c:\Users\Karr5\AppData\Local\Temp\claude\c--Users-Karr5-AndroidStudioProjects-VeloSonic\8514abaf-41f8-48e0-acbd-3a02cad05bea\scratchpad\id3\androidx\media3\extractor\metadata\id3\CommentFrame.java. Using fallback presentation compiler.
+2026.08.10 02:46:19 INFO  no build target found for c:\Users\Karr5\AppData\Local\Temp\claude\c--Users-Karr5-AndroidStudioProjects-VeloSonic\8514abaf-41f8-48e0-acbd-3a02cad05bea\scratchpad\id3\androidx\media3\extractor\metadata\id3\BinaryFrame.java. Using fallback presentation compiler.
+2026.08.13 12:14:00 INFO  Shutting down server
+2026.08.13 12:14:00 INFO  Memory monitor stopped
+2026.08.13 12:14:00 INFO  shutting down Metals
+2026.08.13 12:14:02 ERROR Unexpected error initializing server: 
+org.eclipse.lsp4j.jsonrpc.ResponseErrorException: Request window/showMessageRequest failed with message: Canceled
+	at org.eclipse.lsp4j.jsonrpc.RemoteEndpoint.handleResponse(RemoteEndpoint.java:214)
+	at org.eclipse.lsp4j.jsonrpc.RemoteEndpoint.consume(RemoteEndpoint.java:198)
+	at org.eclipse.lsp4j.jsonrpc.json.StreamMessageProducer.handleMessage(StreamMessageProducer.java:189)
+	at org.eclipse.lsp4j.jsonrpc.json.StreamMessageProducer.listen(StreamMessageProducer.java:97)
+	at org.eclipse.lsp4j.jsonrpc.json.ConcurrentMessageProcessor.run(ConcurrentMessageProcessor.java:97)
+	at java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:572)
+	at java.util.concurrent.FutureTask.run(FutureTask.java:317)
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144)
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
+	at java.lang.Thread.run(Thread.java:1570)
+
