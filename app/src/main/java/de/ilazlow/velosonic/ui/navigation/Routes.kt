@@ -24,6 +24,7 @@ import kotlinx.serialization.Serializable
 @Serializable data class ArtistDetailRoute(val artistId: String, val artistName: String)
 @Serializable data class AlbumDetailRoute(val albumId: String)
 @Serializable data class PlaylistDetailRoute(val playlistId: String)
+@Serializable object LikedSongsRoute
 @Serializable object PlaylistImportRoute
 
 // Settings sub-screens

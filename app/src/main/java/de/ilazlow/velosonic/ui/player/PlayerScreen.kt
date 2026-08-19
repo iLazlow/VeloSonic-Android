@@ -1,5 +1,7 @@
 package de.ilazlow.velosonic.ui.player
 
+import android.content.Intent
+import android.net.Uri
 import android.os.Build
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
@@ -53,6 +55,9 @@ import androidx.compose.material.icons.filled.QueueMusic
 import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material.icons.filled.RepeatOne
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.PlayCircle
+import androidx.compose.material.icons.filled.Public
+import androidx.compose.material.icons.filled.Radio
 import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material.icons.filled.Subtitles
 import androidx.compose.material3.CircularProgressIndicator
@@ -60,6 +65,7 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -74,6 +80,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
@@ -91,6 +98,7 @@ import androidx.media3.common.Player
 import androidx.media3.exoplayer.offline.Download as DownloadState
 import coil3.compose.AsyncImage
 import de.ilazlow.velosonic.data.db.ArtistEntry
+import de.ilazlow.velosonic.data.db.RadioStationEntity
 import de.ilazlow.velosonic.data.db.TrackEntity
 import de.ilazlow.velosonic.data.network.dto.SimilarArtistDto
 import de.ilazlow.velosonic.data.sync.compositeId
@@ -128,12 +136,22 @@ fun PlayerScreen(
     val animateWebpArtwork by viewModel.animateWebpArtwork.collectAsStateWithLifecycle()
     val kawarpSettings by viewModel.kawarpSettings.collectAsStateWithLifecycle()
     val downloads by viewModel.downloads.collectAsStateWithLifecycle()
+    val otherRadioStations by viewModel.otherRadioStations.collectAsStateWithLifecycle()
     val track = nowPlaying.track
 
     var isScrubbing by remember { mutableStateOf(false) }
     var scrubFraction by remember { mutableStateOf(0f) }
     var showLyrics by remember { mutableStateOf(false) }
     var showQueue by remember { mutableStateOf(false) }
+    // Drag state for dismissal — declared here (not down where the gesture is attached) so it can
+    // also drive the OUTER sheet Box's own translation below, not just the inner content: mirrors
+    // iOS's real UISheetPresentationController drag, where the whole sheet (backdrop included)
+    // slides down together and the app content underneath becomes visible through the gap, rather
+    // than a fixed full-screen background with only the scrollable content sliding within it.
+    val density = LocalDensity.current
+    val coroutineScope = rememberCoroutineScope()
+    val dismissThresholdPx = with(density) { 120.dp.toPx() }
+    val offsetY = remember { Animatable(0f) }
     // Reading synced lyrics is a hands-off, screen-watching activity — mirrors iOS keeping the
     // display on for its lyrics view unconditionally, independent of Settings → Playback → Keep
     // Screen Awake (that toggle governs the player generally; someone leaving it off to save
@@ -288,6 +306,20 @@ fun PlayerScreen(
                         onShowInfo = { showSongInfo = true },
                         onDownload = viewModel::downloadCurrentTrack
                     )
+                } else if (nowPlaying.isPlayingRadio) {
+                    val homePageUrl = nowPlaying.radioStation?.homePageUrl?.takeIf { it.isNotBlank() }
+                    val context = LocalContext.current
+                    IconButton(
+                        onClick = { homePageUrl?.let { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(it))) } },
+                        enabled = homePageUrl != null,
+                        modifier = Modifier.size(44.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Public,
+                            contentDescription = "Website",
+                            tint = Color.White.copy(alpha = if (homePageUrl != null) 0.7f else 0.25f)
+                        )
+                    }
                 }
             }
         }
@@ -429,6 +461,15 @@ fun PlayerScreen(
             }
         }
 
+        if (nowPlaying.isPlayingRadio && otherRadioStations.isNotEmpty()) {
+            MoreRadioStationsSection(
+                stations = otherRadioStations,
+                currentStationId = nowPlaying.radioStation?.id,
+                coverArtUrl = viewModel::coverArtUrl,
+                onStationClick = viewModel::playRadioStation
+            )
+        }
+
         // Cast/device stay visual-only placeholders — SharePlay/Watch-mode have no Android
         // equivalent built (see the port plan's won't-port list / later Wear OS phase).
         // Lyrics, Share, and Up Next are all real now.
@@ -510,6 +551,7 @@ fun PlayerScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
+            .offset { IntOffset(0, offsetY.value.toInt()) }
             // A plain Box with no input handling doesn't participate in hit-testing, so without
             // this, taps on any empty area of the sheet (there's plenty — the Spacer gaps, the
             // backdrop itself) fall straight through to whatever NavHost content AppShell is
@@ -522,15 +564,9 @@ fun PlayerScreen(
             FullBleedBackdrop(artworkUrl = artUrl)
         }
 
-        val density = LocalDensity.current
-        val coroutineScope = rememberCoroutineScope()
-        val dismissThresholdPx = with(density) { 120.dp.toPx() }
-        val offsetY = remember { Animatable(0f) }
-
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .offset { IntOffset(0, offsetY.value.toInt()) }
                 .statusBarsPadding()
                 // Without this, the transport/icon row in lyrics mode (a fixed, non-scrollable
                 // layout — see the showLyrics branch below) sits flush against the physical
@@ -646,6 +682,76 @@ fun PlayerScreen(
                 ),
                 onDismiss = { showSongInfo = false }
             )
+        }
+    }
+}
+
+/** Mirrors iOS's `moreRadioStationsSection`: every other station on the same server as the one
+ *  currently playing, as a vertical list with a divider between rows (none after the last) —
+ *  not a carousel. Tapping a row switches playback straight to that station. */
+@Composable
+private fun MoreRadioStationsSection(
+    stations: List<RadioStationEntity>,
+    currentStationId: String?,
+    coverArtUrl: (String, String?, Int) -> String?,
+    onStationClick: (RadioStationEntity) -> Unit
+) {
+    Column(modifier = Modifier.padding(top = 8.dp, bottom = 30.dp)) {
+        Text(
+            text = "Weitere Radiosender",
+            color = Color.White,
+            fontSize = 20.sp,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(top = 8.dp, bottom = 12.dp)
+        )
+        stations.forEachIndexed { index, station ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { onStationClick(station) }
+                    .padding(vertical = 10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(14.dp)
+            ) {
+                val artUrl = station.coverArt?.let { coverArtUrl(station.serverHost, "ra-${station.subsonicId}", 120) }
+                if (artUrl != null) {
+                    AsyncImage(
+                        model = artUrl,
+                        contentDescription = station.name,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.size(52.dp).clip(RoundedCornerShape(10.dp))
+                    )
+                } else {
+                    Box(
+                        modifier = Modifier
+                            .size(52.dp)
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(Color.White.copy(alpha = 0.12f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(Icons.Filled.Radio, contentDescription = null, tint = Color.White.copy(alpha = 0.7f))
+                    }
+                }
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(text = station.name, color = Color.White, fontSize = 16.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Text(
+                        text = station.homePageUrl?.takeIf { it.isNotBlank() } ?: "Live Stream",
+                        color = Color.White.copy(alpha = 0.6f),
+                        fontSize = 12.sp,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+                Icon(
+                    imageVector = Icons.Filled.PlayCircle,
+                    contentDescription = null,
+                    tint = Color.White.copy(alpha = 0.4f),
+                    modifier = Modifier.size(28.dp)
+                )
+            }
+            if (index < stations.lastIndex) {
+                HorizontalDivider(color = Color.White.copy(alpha = 0.15f))
+            }
         }
     }
 }

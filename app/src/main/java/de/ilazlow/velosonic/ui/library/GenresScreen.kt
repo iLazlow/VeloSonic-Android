@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -15,10 +14,6 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -26,19 +21,20 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import de.ilazlow.velosonic.ui.common.AlbumGridItem
 import de.ilazlow.velosonic.ui.common.LibrarySearchField
 import de.ilazlow.velosonic.ui.common.SectionIndexScrubber
+import de.ilazlow.velosonic.ui.settings.SettingsTopBar
 import kotlinx.coroutines.launch
 
 /** Mirrors `LibraryGenresView.swift`: flat A–Z list of genres with an "N albums" subtitle,
  *  drilling into an albums grid per genre (see [GenreAlbumsScreen]) — genres are NOT tracks here. */
 @Composable
 fun GenresScreen(
+    onBack: () -> Unit,
     onGenreClick: (String) -> Unit,
     viewModel: GenresViewModel = hiltViewModel()
 ) {
@@ -53,6 +49,7 @@ fun GenresScreen(
     }.distinct()
 
     Column(modifier = Modifier.fillMaxSize()) {
+        SettingsTopBar(title = "Genres", onBack = onBack)
         LibrarySearchField(value = searchText, onValueChange = viewModel::onSearchTextChange)
 
         Box(modifier = Modifier.fillMaxSize()) {
@@ -100,20 +97,7 @@ fun GenreAlbumsScreen(
     val albums by viewModel.albums.collectAsStateWithLifecycle()
 
     Column(modifier = Modifier.fillMaxSize()) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            IconButton(onClick = onBack) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
-            }
-            Text(
-                text = viewModel.genre,
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(start = 4.dp)
-            )
-        }
+        SettingsTopBar(title = viewModel.genre, onBack = onBack)
         LazyVerticalGrid(
             columns = GridCells.Adaptive(minSize = 140.dp),
             contentPadding = PaddingValues(16.dp),

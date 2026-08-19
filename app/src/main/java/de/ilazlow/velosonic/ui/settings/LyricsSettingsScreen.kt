@@ -34,10 +34,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import de.ilazlow.velosonic.R
 import de.ilazlow.velosonic.data.datastore.LyricsSource
 
 /** Mirrors LyricsSettingsView.swift's Radiant Lyrics toggles + cache browser/clear-cache/credit
@@ -57,26 +59,26 @@ fun LyricsSettingsScreen(
     var confirmFullResync by remember { mutableStateOf(false) }
 
     Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-        SettingsTopBar("Lyrics", onBack)
-        SettingsSectionHeader("Radiant Lyrics")
+        SettingsTopBar(stringResource(id = R.string.settings_lyrics_title), onBack)
+        SettingsSectionHeader(stringResource(id = R.string.settings_lyrics_section_radiant))
         SettingsSwitchRow(
-            title = "Enable Radiant Lyrics",
-            subtitle = "Word-synced karaoke-style lyrics when available, tried before Navidrome/lrclib",
+            title = stringResource(id = R.string.settings_lyrics_enable_title),
+            subtitle = stringResource(id = R.string.settings_lyrics_enable_subtitle),
             checked = lyrics.radiantLyricsEnabled,
             onCheckedChange = viewModel::setRadiantLyricsEnabled
         )
         if (lyrics.radiantLyricsEnabled) {
             HorizontalDivider(modifier = Modifier.padding(horizontal = 20.dp))
             SettingsSwitchRow(
-                title = "Romanization",
-                subtitle = "Show romanized text for non-Latin scripts when available",
+                title = stringResource(id = R.string.settings_lyrics_romanization_title),
+                subtitle = stringResource(id = R.string.settings_lyrics_romanization_subtitle),
                 checked = lyrics.radiantLyricsRomanization,
                 onCheckedChange = viewModel::setRadiantLyricsRomanization
             )
             HorizontalDivider(modifier = Modifier.padding(horizontal = 20.dp))
             SettingsSwitchRow(
-                title = "Sparkle Effect",
-                subtitle = "Decorative sparkle trail at the sweep's leading edge",
+                title = stringResource(id = R.string.settings_lyrics_sparkle_title),
+                subtitle = stringResource(id = R.string.settings_lyrics_sparkle_subtitle),
                 checked = lyrics.radiantLyricsSparklesEnabled,
                 onCheckedChange = viewModel::setRadiantLyricsSparklesEnabled
             )
@@ -85,13 +87,13 @@ fun LyricsSettingsScreen(
                 modifier = Modifier.fillMaxWidth().clickable(onClick = onNavigateToRadiantCache).padding(horizontal = 20.dp, vertical = 14.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("Cached Lyrics", style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
+                Text(stringResource(id = R.string.settings_lyrics_cached_lyrics), style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
                 Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             Row(
                 modifier = Modifier.fillMaxWidth().clickable { confirmClearCache = true }.padding(horizontal = 20.dp, vertical = 14.dp)
             ) {
-                Text("Clear Radiant Cache", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyLarge)
+                Text(stringResource(id = R.string.settings_lyrics_clear_radiant_cache), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyLarge)
             }
             Row(
                 modifier = Modifier
@@ -102,44 +104,44 @@ fun LyricsSettingsScreen(
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Icon(Icons.Filled.Favorite, contentDescription = null, tint = Color(0xFFE91E63))
-                Text("Thanks to meowarex for supporting VeloSonic", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
+                Text(stringResource(id = R.string.settings_lyrics_thanks_meowarex), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
                 Icon(Icons.Filled.OpenInNew, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(16.dp))
             }
         }
         // Kept as its own section, separate from the toggles above, so the AI disclosure is
         // impossible to miss — this isn't just a rendering option, enabling it sends the request
         // to a server-side AI model (mirrors iOS's LyricsSettingsView, which does the same).
-        SettingsSectionHeader("AI Synthesize")
+        SettingsSectionHeader(stringResource(id = R.string.settings_lyrics_section_ai_synthesize))
         SettingsSwitchRow(
-            title = "AI Synthesize",
-            subtitle = "When enabled, Radiant Lyrics uses a server-side AI model to generate word-for-word timing for songs that only have plain line-by-line lyrics. Off by default — turning this on sends your request to that AI model.",
+            title = stringResource(id = R.string.settings_lyrics_section_ai_synthesize),
+            subtitle = stringResource(id = R.string.settings_lyrics_ai_synthesize_subtitle),
             checked = lyrics.radiantLyricsAiSynthesizeEnabled,
             enabled = lyrics.radiantLyricsEnabled,
             onCheckedChange = viewModel::setRadiantLyricsAiSynthesizeEnabled
         )
-        SettingsSectionHeader("Lyrics Source")
+        SettingsSectionHeader(stringResource(id = R.string.settings_lyrics_section_source))
         LyricsSourceRow(
-            title = "Auto",
-            subtitle = "Try Navidrome first, then lrclib.net",
+            title = stringResource(id = R.string.settings_lyrics_source_auto_title),
+            subtitle = stringResource(id = R.string.settings_lyrics_source_auto_subtitle),
             selected = lyrics.source == LyricsSource.AUTO,
             onClick = { viewModel.setLyricsSource(LyricsSource.AUTO) }
         )
         HorizontalDivider(modifier = Modifier.padding(horizontal = 20.dp))
         LyricsSourceRow(
-            title = "Navidrome",
-            subtitle = "Server-provided lyrics only (requires an OpenSubsonic-compatible server)",
+            title = stringResource(id = R.string.settings_lyrics_source_navidrome_title),
+            subtitle = stringResource(id = R.string.settings_lyrics_source_navidrome_subtitle),
             selected = lyrics.source == LyricsSource.NAVIDROME,
             onClick = { viewModel.setLyricsSource(LyricsSource.NAVIDROME) }
         )
         HorizontalDivider(modifier = Modifier.padding(horizontal = 20.dp))
         LyricsSourceRow(
-            title = "lrclib.net",
-            subtitle = "Community-sourced lyrics only",
+            title = stringResource(id = R.string.settings_lyrics_source_lrclib_title),
+            subtitle = stringResource(id = R.string.settings_lyrics_source_lrclib_subtitle),
             selected = lyrics.source == LyricsSource.LRCLIB,
             onClick = { viewModel.setLyricsSource(LyricsSource.LRCLIB) }
         )
 
-        SettingsSectionHeader("Lyrics Sync")
+        SettingsSectionHeader(stringResource(id = R.string.settings_lyrics_section_sync))
         LyricsSyncSection(
             state = syncState,
             onSync = { syncViewModel.startSync() },
@@ -147,7 +149,7 @@ fun LyricsSettingsScreen(
             onFullResyncRequested = { confirmFullResync = true }
         )
         Text(
-            text = "Fetches lyrics in the background for offline playback, preferring your library's already-cached tracks first.",
+            text = stringResource(id = R.string.settings_lyrics_sync_description),
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)
@@ -157,28 +159,28 @@ fun LyricsSettingsScreen(
     if (confirmFullResync) {
         AlertDialog(
             onDismissRequest = { confirmFullResync = false },
-            title = { Text("Full Resync") },
-            text = { Text("This re-checks lyrics for every track in your library, not just the ones never checked before.") },
+            title = { Text(stringResource(id = R.string.settings_lyrics_full_resync)) },
+            text = { Text(stringResource(id = R.string.settings_lyrics_full_resync_message)) },
             confirmButton = {
                 TextButton(onClick = { syncViewModel.startSync(resetFirst = true); confirmFullResync = false }) {
-                    Text("Full Resync", color = MaterialTheme.colorScheme.error)
+                    Text(stringResource(id = R.string.settings_lyrics_full_resync), color = MaterialTheme.colorScheme.error)
                 }
             },
-            dismissButton = { TextButton(onClick = { confirmFullResync = false }) { Text("Cancel") } }
+            dismissButton = { TextButton(onClick = { confirmFullResync = false }) { Text(stringResource(id = R.string.settings_lyrics_cancel)) } }
         )
     }
 
     if (confirmClearCache) {
         AlertDialog(
             onDismissRequest = { confirmClearCache = false },
-            title = { Text("Clear Radiant Cache") },
-            text = { Text("This deletes every cached word-synced lyrics entry on this device. Nothing is removed from the server.") },
+            title = { Text(stringResource(id = R.string.settings_lyrics_clear_radiant_cache)) },
+            text = { Text(stringResource(id = R.string.settings_lyrics_clear_radiant_cache_message)) },
             confirmButton = {
                 TextButton(onClick = { cacheViewModel.clearAll(); confirmClearCache = false }) {
-                    Text("Clear", color = MaterialTheme.colorScheme.error)
+                    Text(stringResource(id = R.string.settings_lyrics_clear), color = MaterialTheme.colorScheme.error)
                 }
             },
-            dismissButton = { TextButton(onClick = { confirmClearCache = false }) { Text("Cancel") } }
+            dismissButton = { TextButton(onClick = { confirmClearCache = false }) { Text(stringResource(id = R.string.settings_lyrics_cancel)) } }
         )
     }
 }
@@ -197,7 +199,7 @@ private fun LyricsSyncSection(
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Icon(Icons.Filled.WifiOff, contentDescription = null, tint = MaterialTheme.colorScheme.tertiary)
-            Text("Offline Mode is on", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(stringResource(id = R.string.settings_lyrics_offline_mode), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         return
     }
@@ -208,21 +210,21 @@ private fun LyricsSyncSection(
                 Text(state.currentTrackTitle, style = MaterialTheme.typography.bodyMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text("Syncing…", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Text("${state.checked} / ${state.total}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(stringResource(id = R.string.settings_lyrics_syncing), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(stringResource(id = R.string.settings_lyrics_sync_progress, state.checked, state.total), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             LinearProgressIndicator(progress = { state.progress }, modifier = Modifier.fillMaxWidth())
         }
         Row(modifier = Modifier.fillMaxWidth().clickable(onClick = onStop).padding(horizontal = 20.dp, vertical = 14.dp)) {
-            Text("Stop", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyLarge)
+            Text(stringResource(id = R.string.settings_lyrics_stop), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyLarge)
         }
     } else {
         Row(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Text("Checked", style = MaterialTheme.typography.bodyMedium)
-            Text("${state.checked} / ${state.total}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(stringResource(id = R.string.settings_lyrics_checked), style = MaterialTheme.typography.bodyMedium)
+            Text(stringResource(id = R.string.settings_lyrics_sync_progress, state.checked, state.total), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         if (state.total > 0) {
             LinearProgressIndicator(
@@ -232,11 +234,15 @@ private fun LyricsSyncSection(
             )
         }
         Row(modifier = Modifier.fillMaxWidth().clickable(onClick = onSync).padding(horizontal = 20.dp, vertical = 14.dp)) {
-            Text(if (state.pending == 0) "Resync" else "Sync", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.bodyLarge)
+            Text(
+                if (state.pending == 0) stringResource(id = R.string.settings_lyrics_resync) else stringResource(id = R.string.settings_lyrics_sync_action),
+                color = MaterialTheme.colorScheme.primary,
+                style = MaterialTheme.typography.bodyLarge
+            )
         }
         if (state.checked > 0) {
             Row(modifier = Modifier.fillMaxWidth().clickable(onClick = onFullResyncRequested).padding(horizontal = 20.dp, vertical = 14.dp)) {
-                Text("Full Resync", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyLarge)
+                Text(stringResource(id = R.string.settings_lyrics_full_resync), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyLarge)
             }
         }
     }

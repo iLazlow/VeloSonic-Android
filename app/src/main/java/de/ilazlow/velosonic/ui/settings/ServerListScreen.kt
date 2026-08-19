@@ -39,11 +39,13 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import de.ilazlow.velosonic.R
 import de.ilazlow.velosonic.data.db.ServerConfigEntity
 
 /**
@@ -80,10 +82,10 @@ fun ServerListScreen(
     var removeTarget by remember { mutableStateOf<ServerConfigEntity?>(null) }
 
     Column(modifier = Modifier.fillMaxSize()) {
-        SettingsTopBar("Manage Addresses", onBack)
+        SettingsTopBar(stringResource(id = R.string.settings_server_list_title), onBack)
         if (localOrder.size > 1) {
             Text(
-                text = "Drag to reorder. This order is used everywhere multiple servers are combined or listed.",
+                text = stringResource(id = R.string.settings_server_list_drag_hint),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 12.dp)
@@ -134,7 +136,7 @@ fun ServerListScreen(
                         }
                         DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
                             DropdownMenuItem(
-                                text = { Text("Remove Server", color = MaterialTheme.colorScheme.error) },
+                                text = { Text(stringResource(id = R.string.settings_server_list_remove_server), color = MaterialTheme.colorScheme.error) },
                                 onClick = { showMenu = false; removeTarget = server }
                             )
                         }
@@ -142,7 +144,7 @@ fun ServerListScreen(
                     if (localOrder.size > 1) {
                         Icon(
                             imageVector = Icons.Filled.DragHandle,
-                            contentDescription = "Drag to reorder",
+                            contentDescription = stringResource(id = R.string.settings_server_list_drag_handle_description),
                             tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.pointerInput(Unit) {
                                 detectDragGestures(
@@ -185,7 +187,7 @@ fun ServerListScreen(
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 16.dp)
                 ) {
                     Icon(Icons.Filled.Add, contentDescription = null, modifier = Modifier.padding(end = 8.dp))
-                    Text("Add Server")
+                    Text(stringResource(id = R.string.settings_server_list_add_server))
                 }
             }
         }
@@ -198,14 +200,14 @@ fun ServerListScreen(
     removeTarget?.let { config ->
         AlertDialog(
             onDismissRequest = { removeTarget = null },
-            title = { Text("Remove \"${config.name.ifBlank { config.host }}\"?") },
-            text = { Text("This removes its cached library data and saved credentials from this device.") },
+            title = { Text(stringResource(id = R.string.settings_server_list_remove_dialog_title, config.name.ifBlank { config.host })) },
+            text = { Text(stringResource(id = R.string.settings_server_list_remove_dialog_text)) },
             confirmButton = {
                 TextButton(onClick = { viewModel.removeServer(config); removeTarget = null }) {
-                    Text("Remove", color = MaterialTheme.colorScheme.error)
+                    Text(stringResource(id = R.string.settings_server_list_remove_confirm), color = MaterialTheme.colorScheme.error)
                 }
             },
-            dismissButton = { TextButton(onClick = { removeTarget = null }) { Text("Cancel") } }
+            dismissButton = { TextButton(onClick = { removeTarget = null }) { Text(stringResource(id = R.string.settings_server_list_cancel)) } }
         )
     }
 }

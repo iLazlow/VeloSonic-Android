@@ -66,6 +66,7 @@ private enum class DownloadCategory(val title: String) {
  *  [BackHandler] before leaving the tab, so it doesn't feel like a dead end. */
 @Composable
 fun DownloadsScreen(
+    onBack: () -> Unit,
     onPlaylistClick: (String) -> Unit,
     onAlbumClick: (String) -> Unit,
     onArtistClick: (id: String, name: String) -> Unit,
@@ -86,16 +87,14 @@ fun DownloadsScreen(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            if (selected != null) {
-                IconButton(onClick = { selected = null }) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
-                }
+            IconButton(onClick = { if (selected != null) selected = null else onBack() }) {
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
             }
             Text(
                 text = selected?.title ?: "Downloads",
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(start = if (selected != null) 4.dp else 8.dp)
+                modifier = Modifier.padding(start = 4.dp)
             )
             Spacer(modifier = Modifier.weight(1f))
             IconButton(onClick = { showQueue = true }) {

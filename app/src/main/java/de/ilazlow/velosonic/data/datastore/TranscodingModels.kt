@@ -40,3 +40,21 @@ fun formatTranscodingSummary(
     }
     return "$name @ ${bitrate.kbps} kbps"
 }
+
+/** Resolves the actual Subsonic `format=` query value — null means "omit the param entirely"
+ *  (RAW/no transcoding, or a blank custom value), matching iOS's `resolvedDownloadFormat`/
+ *  `dlFormat != "raw"` check in `DownloadManager.swift`. Subsonic expects lowercase codec names. */
+fun StreamFormat.resolvedQueryValue(customFormat: String): String? = when (this) {
+    StreamFormat.RAW -> null
+    StreamFormat.CUSTOM -> customFormat.trim().takeIf { it.isNotEmpty() }
+    else -> name.lowercase()
+}
+
+/** Resolves the actual Subsonic `maxBitRate=` query value — null means "omit the param entirely"
+ *  (Original/unlimited, or an invalid/blank custom value), matching iOS's `resolvedDownloadBitrate`/
+ *  `dlBitrate > 0` check. */
+fun StreamBitrate.resolvedQueryValue(customBitrate: String): Int? = when (this) {
+    StreamBitrate.ORIGINAL -> null
+    StreamBitrate.CUSTOM -> customBitrate.trim().toIntOrNull()?.takeIf { it > 0 }
+    else -> kbps
+}

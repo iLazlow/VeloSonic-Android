@@ -80,6 +80,12 @@ androidx-media3-exoplayer = { group = "androidx.media3", name = "media3-exoplaye
 androidx-media3-exoplayer-workmanager = { group = "androidx.media3", name = "media3-exoplayer-workmanager", version.ref = "media3" }
 androidx-media3-session = { group = "androidx.media3", name = "media3-session", version.ref = "media3" }
 androidx-media3-datasource = { group = "androidx.media3", name = "media3-datasource", version.ref = "media3" }
+# Real Square OkHttp (already a dependency for the API client) instead of Media3's default
+# DefaultHttpDataSource, which is backed by Android's own bundled/legacy HttpURLConnection stack —
+# confirmed live via full response-header logging that the platform stack silently drops every
+# icy-* response header from an Icecast/Shoutcast radio stream while every other header from the
+# same response survives intact. See PlaybackEngine.kt's radio streaming data source.
+androidx-media3-datasource-okhttp = { group = "androidx.media3", name = "media3-datasource-okhttp", version.ref = "media3" }
 androidx-media3-common = { group = "androidx.media3", name = "media3-common", version.ref = "media3" }
 androidx-media3-ui = { group = "androidx.media3", name = "media3-ui", version.ref = "media3" }
 

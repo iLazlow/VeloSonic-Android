@@ -29,9 +29,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import de.ilazlow.velosonic.R
 import de.ilazlow.velosonic.data.ServerStats
 
 /**
@@ -70,34 +72,34 @@ fun ManageServersScreen(
     }
 
     Column(modifier = Modifier.fillMaxSize()) {
-        SettingsTopBar("Manage Servers", onBack)
+        SettingsTopBar(stringResource(id = R.string.settings_manage_servers_title), onBack)
         LazyColumn(modifier = Modifier.fillMaxSize().weight(1f)) {
             item {
                 SettingsNavRow(
                     icon = Icons.Filled.Dns,
-                    label = "Manage Addresses",
+                    label = stringResource(id = R.string.settings_manage_servers_manage_addresses),
                     onClick = onNavigateToServerList
                 )
             }
             item {
                 SettingsNavRow(
                     icon = Icons.Filled.Share,
-                    label = "Manage Shares",
+                    label = stringResource(id = R.string.settings_manage_servers_manage_shares),
                     onClick = onNavigateToShares
                 )
             }
             item { HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp)) }
-            item { SettingsSectionHeader("Sync Status") }
+            item { SettingsSectionHeader(stringResource(id = R.string.settings_manage_servers_section_sync_status)) }
             item {
                 Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 4.dp)) {
                     if (syncState.isSyncing) {
-                        Text(syncState.serverProgressLabel.ifEmpty { "Syncing…" }, style = MaterialTheme.typography.bodyMedium)
+                        Text(syncState.serverProgressLabel.ifEmpty { stringResource(id = R.string.settings_manage_servers_syncing) }, style = MaterialTheme.typography.bodyMedium)
                         Text(syncState.statusMessage, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         LinearProgressIndicator(progress = { syncState.progress.toFloat() }, modifier = Modifier.fillMaxWidth().padding(top = 6.dp))
                     } else {
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             Icon(Icons.Filled.CheckCircle, contentDescription = null, tint = Color(0xFF4CAF50), modifier = Modifier.padding(top = 2.dp))
-                            Text("Up to date", style = MaterialTheme.typography.bodyMedium)
+                            Text(stringResource(id = R.string.settings_manage_servers_up_to_date), style = MaterialTheme.typography.bodyMedium)
                         }
                     }
                 }
@@ -105,22 +107,22 @@ fun ManageServersScreen(
             item {
                 Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     TextButton(onClick = { viewModel.resyncAll(servers.map { it.host }) }, enabled = !syncState.isSyncing) {
-                        Text("Resync")
+                        Text(stringResource(id = R.string.settings_manage_servers_resync))
                     }
                     TextButton(onClick = { viewModel.fullResyncAll(servers.map { it.host }) }, enabled = !syncState.isSyncing) {
-                        Text("Full Resync")
+                        Text(stringResource(id = R.string.settings_manage_servers_full_resync))
                     }
                 }
             }
             item { HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp)) }
-            item { SettingsSectionHeader("Local Database") }
-            item { StatRow("Artists", stats.artists) }
-            item { StatRow("Albums", stats.albums) }
-            item { StatRow("Songs", stats.songs) }
-            item { StatRow("Genres", stats.genres) }
-            item { StatRow("Playlists", stats.playlists) }
-            item { StatRow("Radio Stations", stats.radioStations) }
-            item { StatRow("Downloaded Songs", stats.downloadedSongs) }
+            item { SettingsSectionHeader(stringResource(id = R.string.settings_manage_servers_section_local_database)) }
+            item { StatRow(stringResource(id = R.string.settings_manage_servers_stat_artists), stats.artists) }
+            item { StatRow(stringResource(id = R.string.settings_manage_servers_stat_albums), stats.albums) }
+            item { StatRow(stringResource(id = R.string.settings_manage_servers_stat_songs), stats.songs) }
+            item { StatRow(stringResource(id = R.string.settings_manage_servers_stat_genres), stats.genres) }
+            item { StatRow(stringResource(id = R.string.settings_manage_servers_stat_playlists), stats.playlists) }
+            item { StatRow(stringResource(id = R.string.settings_manage_servers_stat_radio_stations), stats.radioStations) }
+            item { StatRow(stringResource(id = R.string.settings_manage_servers_stat_downloaded_songs), stats.downloadedSongs) }
         }
     }
 }

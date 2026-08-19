@@ -439,7 +439,7 @@ private fun PlaylistHeader(
 }
 
 @Composable
-private fun CircleActionButton(onClick: () -> Unit, content: @Composable () -> Unit) {
+fun CircleActionButton(onClick: () -> Unit, content: @Composable () -> Unit) {
     Box(
         modifier = Modifier
             .size(50.dp)
@@ -453,7 +453,7 @@ private fun CircleActionButton(onClick: () -> Unit, content: @Composable () -> U
 }
 
 @Composable
-private fun PlaylistTrackRow(
+fun PlaylistTrackRow(
     track: TrackEntity,
     coverArtUrl: String?,
     isCurrentTrack: Boolean,
@@ -469,10 +469,10 @@ private fun PlaylistTrackRow(
     onGoToArtist: (() -> Unit)?,
     onGoToAlbum: (() -> Unit)?,
     onAddToPlaylist: () -> Unit,
-    onRemove: () -> Unit,
     onToggleDownload: () -> Unit,
     onShare: () -> Unit,
-    onShowInfo: () -> Unit
+    onShowInfo: () -> Unit,
+    onRemove: (() -> Unit)? = null
 ) {
     var showMenu by remember { mutableStateOf(false) }
     Row(

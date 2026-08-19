@@ -15,9 +15,11 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import de.ilazlow.velosonic.ui.common.AlbumGridItem
 import de.ilazlow.velosonic.ui.common.LibrarySearchField
+import de.ilazlow.velosonic.ui.settings.SettingsTopBar
 
 @Composable
 fun AlbumsScreen(
+    onBack: () -> Unit,
     onAlbumClick: (String) -> Unit,
     viewModel: AlbumsViewModel = hiltViewModel()
 ) {
@@ -26,6 +28,7 @@ fun AlbumsScreen(
     val searchText by viewModel.searchText.collectAsStateWithLifecycle()
 
     Column(modifier = Modifier.fillMaxSize()) {
+        SettingsTopBar(title = "Albums", onBack = onBack)
         LibrarySearchField(value = searchText, onValueChange = viewModel::onSearchTextChange)
         LazyVerticalGrid(
             columns = GridCells.Adaptive(minSize = 140.dp),

@@ -21,9 +21,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import de.ilazlow.velosonic.R
 
 /**
  * Occupies the same hub slot as iOS's Appearance screen — dynamic color (Android-only, no iOS
@@ -44,19 +46,19 @@ fun AppearanceSettingsScreen(
     var apiUrlText by remember(appearance.animatedArtworkApiUrl) { mutableStateOf(appearance.animatedArtworkApiUrl) }
 
     Column(modifier = Modifier.fillMaxSize()) {
-        SettingsTopBar("Appearance", onBack)
+        SettingsTopBar(stringResource(id = R.string.settings_appearance_title), onBack)
         LazyColumn(modifier = Modifier.fillMaxSize()) {
             item {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                     SettingsSwitchRow(
-                        title = "Use Dynamic Color",
-                        subtitle = "Theme the app from your device's system color (Settings → Wallpaper & style, Android 12+)",
+                        title = stringResource(id = R.string.settings_appearance_dynamic_color_title),
+                        subtitle = stringResource(id = R.string.settings_appearance_dynamic_color_subtitle),
                         checked = appearance.dynamicColorEnabled,
                         onCheckedChange = viewModel::setDynamicColorEnabled
                     )
                 } else {
                     Text(
-                        text = "Dynamic color theming requires Android 12 or newer.",
+                        text = stringResource(id = R.string.settings_appearance_dynamic_color_unsupported),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp)
@@ -65,39 +67,39 @@ fun AppearanceSettingsScreen(
             }
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 item { HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp)) }
-                item { SettingsSectionHeader("Player") }
+                item { SettingsSectionHeader(stringResource(id = R.string.settings_appearance_section_player)) }
                 item {
                     NavHubRow(
                         icon = Icons.Filled.Waves,
-                        label = "Liquid Cover Backdrop",
+                        label = stringResource(id = R.string.settings_appearance_liquid_cover_backdrop),
                         onClick = onNavigateToLiquidCover
                     )
                 }
             }
             item { HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp)) }
-            item { SettingsSectionHeader("Animated Artwork") }
+            item { SettingsSectionHeader(stringResource(id = R.string.settings_appearance_section_animated_artwork)) }
             item {
                 SettingsSwitchRow(
-                    title = "Animated Artwork",
-                    subtitle = "Play animated cover art (native animated WebP, plus looping video where available) in the player and album/playlist headers",
+                    title = stringResource(id = R.string.settings_appearance_animated_artwork_title),
+                    subtitle = stringResource(id = R.string.settings_appearance_animated_artwork_subtitle),
                     checked = appearance.animatedArtworksEnabled,
                     onCheckedChange = viewModel::setAnimatedArtworksEnabled
                 )
             }
             item {
                 SettingsSwitchRow(
-                    title = "Animate in Grid/List",
-                    subtitle = "Also animate WebP artwork in album grids, not just detail screens",
+                    title = stringResource(id = R.string.settings_appearance_animate_grid_list_title),
+                    subtitle = stringResource(id = R.string.settings_appearance_animate_grid_list_subtitle),
                     checked = appearance.animatedAlbumGridEnabled,
                     onCheckedChange = viewModel::setAnimatedAlbumGridEnabled
                 )
             }
             item { HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp)) }
-            item { SettingsSectionHeader("Animated Artwork API") }
+            item { SettingsSectionHeader(stringResource(id = R.string.settings_appearance_section_animated_artwork_api)) }
             item {
                 SettingsSwitchRow(
-                    title = "Fetch Missing Animated Artwork",
-                    subtitle = "When a track has no animated cover of its own, look one up from a third-party API and play it as a looping muted video. This calls an unofficial, unowned external service (ama.trainswift.net by default) with no uptime guarantee.",
+                    title = stringResource(id = R.string.settings_appearance_fetch_missing_title),
+                    subtitle = stringResource(id = R.string.settings_appearance_fetch_missing_subtitle),
                     checked = appearance.applyMissingAnimatedArtworks,
                     onCheckedChange = viewModel::setApplyMissingAnimatedArtworks
                 )
@@ -107,8 +109,8 @@ fun AppearanceSettingsScreen(
                     OutlinedTextField(
                         value = apiUrlText,
                         onValueChange = { apiUrlText = it },
-                        label = { Text("API URL") },
-                        supportingText = { Text("Placeholders: {artistName}, {albumName}, {songName}") },
+                        label = { Text(stringResource(id = R.string.settings_appearance_api_url_label)) },
+                        supportingText = { Text(stringResource(id = R.string.settings_appearance_api_url_supporting_text)) },
                         singleLine = false,
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -119,13 +121,13 @@ fun AppearanceSettingsScreen(
                         TextButton(onClick = {
                             viewModel.resetAnimatedArtworkApiUrl()
                         }) {
-                            Text("Reset to Default")
+                            Text(stringResource(id = R.string.settings_appearance_reset_default))
                         }
                         TextButton(
                             onClick = { viewModel.setAnimatedArtworkApiUrl(apiUrlText) },
                             enabled = apiUrlText.isNotBlank() && apiUrlText != appearance.animatedArtworkApiUrl
                         ) {
-                            Text("Save")
+                            Text(stringResource(id = R.string.settings_appearance_save))
                         }
                     }
                 }

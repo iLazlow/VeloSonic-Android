@@ -70,7 +70,10 @@ fun AddServerSheet(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Text(text = if (uiState.isEditMode) "Edit Server" else "Add Server", style = MaterialTheme.typography.titleMedium)
+            Text(
+                text = if (uiState.isEditMode) stringResource(id = R.string.settings_add_server_edit_title) else stringResource(id = R.string.settings_add_server_add_title),
+                style = MaterialTheme.typography.titleMedium
+            )
             OutlinedTextField(
                 value = uiState.serverName,
                 onValueChange = viewModel::onServerNameChange,
@@ -85,7 +88,7 @@ fun AddServerSheet(
                 singleLine = true,
                 enabled = !uiState.isMigrating,
                 supportingText = if (uiState.isEditMode) {
-                    { Text("Changing this migrates your local library data to the new address.") }
+                    { Text(stringResource(id = R.string.settings_add_server_host_change_hint)) }
                 } else null,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri, capitalization = KeyboardCapitalization.None),
                 modifier = Modifier.fillMaxWidth()
@@ -117,7 +120,7 @@ fun AddServerSheet(
             }
             if (uiState.isMigrating) {
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text("Migrating local data…", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(id = R.string.settings_add_server_migrating), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     LinearProgressIndicator(progress = { uiState.migrationProgress }, modifier = Modifier.fillMaxWidth())
                 }
             }
@@ -125,7 +128,7 @@ fun AddServerSheet(
                 if (uiState.isConnecting || uiState.isConnected) {
                     LoadingIndicator(modifier = Modifier.padding(vertical = 2.dp))
                 } else {
-                    Text(if (uiState.isEditMode) "Save" else stringResource(id = R.string.login_connect))
+                    Text(if (uiState.isEditMode) stringResource(id = R.string.settings_add_server_save) else stringResource(id = R.string.login_connect))
                 }
             }
             androidx.compose.foundation.layout.Spacer(modifier = Modifier.padding(bottom = 8.dp))
@@ -135,13 +138,13 @@ fun AddServerSheet(
     if (uiState.pendingHostChangeConfirm) {
         AlertDialog(
             onDismissRequest = viewModel::dismissHostChangeConfirm,
-            title = { Text("Change Server Address?") },
-            text = { Text("This migrates your library, downloads, and cached data from \"${uiState.originalHost}\" to \"${uiState.host}\". This can't be undone.") },
+            title = { Text(stringResource(id = R.string.settings_add_server_change_address_dialog_title)) },
+            text = { Text(stringResource(id = R.string.settings_add_server_change_address_dialog_text, uiState.originalHost, uiState.host)) },
             confirmButton = {
-                TextButton(onClick = viewModel::confirmAndConnect) { Text("Migrate") }
+                TextButton(onClick = viewModel::confirmAndConnect) { Text(stringResource(id = R.string.settings_add_server_migrate_confirm)) }
             },
             dismissButton = {
-                TextButton(onClick = viewModel::dismissHostChangeConfirm) { Text("Cancel") }
+                TextButton(onClick = viewModel::dismissHostChangeConfirm) { Text(stringResource(id = R.string.settings_add_server_cancel)) }
             }
         )
     }

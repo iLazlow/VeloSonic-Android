@@ -29,11 +29,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import de.ilazlow.velosonic.R
 import de.ilazlow.velosonic.data.lyrics.LyricLine
 
 /** Mirrors iOS's `RadiantLyricsCacheDetailView` — one cached entry's full line content plus a
@@ -51,18 +53,20 @@ fun RadiantLyricsCacheDetailScreen(
 
     LaunchedEffect(entryId) { viewModel.load(entryId) }
 
+    val deleteLabel = stringResource(id = R.string.settings_radiant_delete)
+
     Column(modifier = Modifier.fillMaxSize()) {
         SettingsTopBar(
-            title = "Cached Entry",
+            title = stringResource(id = R.string.settings_radiant_detail_title),
             onBack = onBack,
             actions = {
                 IconButton(onClick = { confirmDelete = true }) {
-                    Icon(Icons.Filled.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error)
+                    Icon(Icons.Filled.Delete, contentDescription = deleteLabel, tint = MaterialTheme.colorScheme.error)
                 }
             }
         )
         LazyColumn(modifier = Modifier.fillMaxSize()) {
-            item { SettingsSectionHeader("Content") }
+            item { SettingsSectionHeader(stringResource(id = R.string.settings_radiant_section_content)) }
             items(lines) { line: LyricLine ->
                 Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 4.dp)) {
                     Text(text = timeString(line.startMs), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, fontFamily = FontFamily.Monospace)
@@ -81,7 +85,7 @@ fun RadiantLyricsCacheDetailScreen(
                         .padding(horizontal = 20.dp, vertical = 14.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("Raw Content", style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
+                    Text(stringResource(id = R.string.settings_radiant_raw_content), style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
                     Icon(if (showRaw) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore, contentDescription = null)
                 }
             }
@@ -102,14 +106,14 @@ fun RadiantLyricsCacheDetailScreen(
     if (confirmDelete) {
         AlertDialog(
             onDismissRequest = { confirmDelete = false },
-            title = { Text("Delete Cached Entry?") },
-            text = { Text("This can't be undone — it'll be re-fetched from Radiant Lyrics next time this track plays.") },
+            title = { Text(stringResource(id = R.string.settings_radiant_delete_dialog_title)) },
+            text = { Text(stringResource(id = R.string.settings_radiant_delete_dialog_message)) },
             confirmButton = {
                 TextButton(onClick = { viewModel.delete(entryId); confirmDelete = false; onBack() }) {
-                    Text("Delete", color = MaterialTheme.colorScheme.error)
+                    Text(deleteLabel, color = MaterialTheme.colorScheme.error)
                 }
             },
-            dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text("Cancel") } }
+            dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text(stringResource(id = R.string.settings_radiant_cancel)) } }
         )
     }
 }

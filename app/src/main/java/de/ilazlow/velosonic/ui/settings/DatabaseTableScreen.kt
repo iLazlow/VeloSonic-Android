@@ -20,10 +20,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import de.ilazlow.velosonic.R
 
 /** Mirrors iOS's `DatabaseTableView` — a paginated (50/page) raw row browser for one table. */
 @Composable
@@ -43,10 +45,11 @@ fun DatabaseTableScreen(
     Column(modifier = Modifier.fillMaxSize()) {
         SettingsTopBar(tableName, onBack)
         val scrollState = rememberScrollState()
+        val nullValueLabel = stringResource(id = R.string.settings_database_null_value)
         LazyColumn(modifier = Modifier.fillMaxWidth().weight(1f)) {
             item {
                 Row(modifier = Modifier.horizontalScroll(scrollState).padding(horizontal = 12.dp, vertical = 6.dp)) {
-                    Text("rowid", modifier = Modifier.width(80.dp), style = MaterialTheme.typography.labelSmall, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
+                    Text(stringResource(id = R.string.settings_database_column_rowid), modifier = Modifier.width(80.dp), style = MaterialTheme.typography.labelSmall, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
                     columns.forEach { col ->
                         Text(col, modifier = Modifier.width(140.dp), style = MaterialTheme.typography.labelSmall, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
                     }
@@ -63,7 +66,7 @@ fun DatabaseTableScreen(
                     Text("${row.rowId}", modifier = Modifier.width(80.dp), style = MaterialTheme.typography.bodySmall)
                     columns.forEach { col ->
                         Text(
-                            row.values[col] ?: "NULL",
+                            row.values[col] ?: nullValueLabel,
                             modifier = Modifier.width(140.dp),
                             style = MaterialTheme.typography.bodySmall,
                             maxLines = 1,
@@ -78,9 +81,9 @@ fun DatabaseTableScreen(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            TextButton(onClick = viewModel::previousPage, enabled = page > 0) { Text("Previous") }
-            Text("Page ${page + 1}", style = MaterialTheme.typography.bodyMedium)
-            TextButton(onClick = viewModel::nextPage, enabled = hasMore) { Text("Next") }
+            TextButton(onClick = viewModel::previousPage, enabled = page > 0) { Text(stringResource(id = R.string.settings_database_table_previous)) }
+            Text(stringResource(id = R.string.settings_database_table_page_label, page + 1), style = MaterialTheme.typography.bodyMedium)
+            TextButton(onClick = viewModel::nextPage, enabled = hasMore) { Text(stringResource(id = R.string.settings_database_table_next)) }
         }
     }
 }

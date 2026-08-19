@@ -35,11 +35,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import de.ilazlow.velosonic.R
 import de.ilazlow.velosonic.data.network.dto.NowPlayingEntryDto
 import de.ilazlow.velosonic.data.network.dto.ScanStatusDto
 import de.ilazlow.velosonic.ui.common.CoverArtTile
@@ -78,28 +80,28 @@ fun ServerDetailScreen(host: String, onBack: () -> Unit, viewModel: ServerDetail
     Column(modifier = Modifier.fillMaxSize()) {
         SettingsTopBar(config?.name?.ifBlank { host } ?: host, onBack)
         if (config == null) {
-            Text("Server not found.", modifier = Modifier.padding(20.dp))
+            Text(stringResource(id = R.string.settings_server_detail_not_found), modifier = Modifier.padding(20.dp))
             return@Column
         }
         LazyColumn(modifier = Modifier.fillMaxSize()) {
-            item { SettingsSectionHeader("Info") }
-            item { InfoRow("Name", config.name.ifBlank { config.host }) }
-            item { InfoRow("Domain", config.host) }
-            item { InfoRow("Username", config.username) }
-            config.serverTypeRaw?.let { item { InfoRow("Server Type", it) } }
-            config.serverVersion?.let { item { InfoRow("Server Version", it) } }
+            item { SettingsSectionHeader(stringResource(id = R.string.settings_server_detail_section_info)) }
+            item { InfoRow(stringResource(id = R.string.settings_server_detail_name_label), config.name.ifBlank { config.host }) }
+            item { InfoRow(stringResource(id = R.string.settings_server_detail_domain_label), config.host) }
+            item { InfoRow(stringResource(id = R.string.settings_server_detail_username_label), config.username) }
+            config.serverTypeRaw?.let { item { InfoRow(stringResource(id = R.string.settings_server_detail_server_type_label), it) } }
+            config.serverVersion?.let { item { InfoRow(stringResource(id = R.string.settings_server_detail_server_version_label), it) } }
             item {
                 Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text("Connection", style = MaterialTheme.typography.bodyMedium)
+                    Text(stringResource(id = R.string.settings_server_detail_connection_label), style = MaterialTheme.typography.bodyMedium)
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                         Icon(Icons.Filled.CheckCircle, contentDescription = null, tint = Color(0xFF4CAF50))
-                        Text("Connected", style = MaterialTheme.typography.bodyMedium)
+                        Text(stringResource(id = R.string.settings_server_detail_connected_status), style = MaterialTheme.typography.bodyMedium)
                     }
                 }
             }
             if (config.isAdmin) {
                 item { HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp)) }
-                item { SettingsSectionHeader("Actions") }
+                item { SettingsSectionHeader(stringResource(id = R.string.settings_server_detail_section_actions)) }
                 item {
                     ScanActionsSection(
                         scanStatus = scanStatus,
@@ -108,11 +110,11 @@ fun ServerDetailScreen(host: String, onBack: () -> Unit, viewModel: ServerDetail
                     )
                 }
                 item { HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp)) }
-                item { SettingsSectionHeader("Now Playing") }
+                item { SettingsSectionHeader(stringResource(id = R.string.settings_server_detail_section_now_playing)) }
                 if (nowPlayingEntries.isEmpty()) {
                     item {
                         Text(
-                            "No one is currently listening",
+                            stringResource(id = R.string.settings_server_detail_no_one_listening),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)
@@ -129,26 +131,26 @@ fun ServerDetailScreen(host: String, onBack: () -> Unit, viewModel: ServerDetail
                 }
             }
             item { HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp)) }
-            item { SettingsSectionHeader("Local Database") }
-            item { StatRow("Artists", stats.artists) }
-            item { StatRow("Albums", stats.albums) }
-            item { StatRow("Songs", stats.songs) }
-            item { StatRow("Genres", stats.genres) }
-            item { StatRow("Playlists", stats.playlists) }
-            item { StatRow("Radio Stations", stats.radioStations) }
-            item { StatRow("Downloaded Songs", stats.downloadedSongs) }
+            item { SettingsSectionHeader(stringResource(id = R.string.settings_server_detail_section_local_database)) }
+            item { StatRow(stringResource(id = R.string.settings_server_detail_stat_artists), stats.artists) }
+            item { StatRow(stringResource(id = R.string.settings_server_detail_stat_albums), stats.albums) }
+            item { StatRow(stringResource(id = R.string.settings_server_detail_stat_songs), stats.songs) }
+            item { StatRow(stringResource(id = R.string.settings_server_detail_stat_genres), stats.genres) }
+            item { StatRow(stringResource(id = R.string.settings_server_detail_stat_playlists), stats.playlists) }
+            item { StatRow(stringResource(id = R.string.settings_server_detail_stat_radio_stations), stats.radioStations) }
+            item { StatRow(stringResource(id = R.string.settings_server_detail_stat_downloaded_songs), stats.downloadedSongs) }
             item { HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp)) }
             item {
                 Column(modifier = Modifier.fillMaxWidth().padding(20.dp)) {
                     OutlinedButton(onClick = { showEditSheet = true }, modifier = Modifier.fillMaxWidth()) {
-                        Text("Edit")
+                        Text(stringResource(id = R.string.settings_server_detail_edit))
                     }
                     OutlinedButton(
                         onClick = { confirmDelete = true },
                         modifier = Modifier.fillMaxWidth().padding(top = 12.dp)
                     ) {
                         Icon(Icons.Filled.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.padding(end = 8.dp))
-                        Text("Delete Connection", color = MaterialTheme.colorScheme.error)
+                        Text(stringResource(id = R.string.settings_server_detail_delete_connection), color = MaterialTheme.colorScheme.error)
                     }
                 }
             }
@@ -158,18 +160,18 @@ fun ServerDetailScreen(host: String, onBack: () -> Unit, viewModel: ServerDetail
     if (confirmDelete) {
         AlertDialog(
             onDismissRequest = { confirmDelete = false },
-            title = { Text("Remove \"${config?.name?.ifBlank { host } ?: host}\"?") },
-            text = { Text("This removes its cached library data and saved credentials from this device.") },
+            title = { Text(stringResource(id = R.string.settings_server_detail_remove_dialog_title, config?.name?.ifBlank { host } ?: host)) },
+            text = { Text(stringResource(id = R.string.settings_server_detail_remove_dialog_text)) },
             confirmButton = {
                 TextButton(onClick = {
                     config?.let(viewModel::removeServer)
                     confirmDelete = false
                     onBack()
                 }) {
-                    Text("Remove", color = MaterialTheme.colorScheme.error)
+                    Text(stringResource(id = R.string.settings_server_detail_remove_confirm), color = MaterialTheme.colorScheme.error)
                 }
             },
-            dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text("Cancel") } }
+            dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text(stringResource(id = R.string.settings_server_detail_cancel)) } }
         )
     }
 
@@ -189,18 +191,19 @@ private fun ScanActionsSection(
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.padding(vertical = 8.dp)) {
                 CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
                 Text(
-                    text = scanStatus.count?.let { "Scanning… $it" } ?: "Scanning…",
+                    text = scanStatus.count?.let { stringResource(id = R.string.settings_server_detail_scanning_with_count, it) }
+                        ?: stringResource(id = R.string.settings_server_detail_scanning),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         } else {
-            scanStatus?.folderCount?.let { InlineStatRow("Remote Folders", "$it") }
-            scanStatus?.count?.let { InlineStatRow("Remote Songs", "$it") }
-            InlineStatRow("Last Scan", formatLastScan(scanStatus?.lastScan))
+            scanStatus?.folderCount?.let { InlineStatRow(stringResource(id = R.string.settings_server_detail_remote_folders_label), "$it") }
+            scanStatus?.count?.let { InlineStatRow(stringResource(id = R.string.settings_server_detail_remote_songs_label), "$it") }
+            InlineStatRow(stringResource(id = R.string.settings_server_detail_last_scan_label), formatLastScan(scanStatus?.lastScan, stringResource(id = R.string.settings_server_detail_never)))
             Row(modifier = Modifier.padding(vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                TextButton(onClick = onQuickScan) { Text("Quick Scan") }
-                TextButton(onClick = onFullScan) { Text("Full Scan") }
+                TextButton(onClick = onQuickScan) { Text(stringResource(id = R.string.settings_server_detail_quick_scan)) }
+                TextButton(onClick = onFullScan) { Text(stringResource(id = R.string.settings_server_detail_full_scan)) }
             }
         }
     }
@@ -214,8 +217,8 @@ private fun InlineStatRow(label: String, value: String) {
     }
 }
 
-private fun formatLastScan(raw: String?): String {
-    if (raw.isNullOrBlank()) return "Never"
+private fun formatLastScan(raw: String?, neverLabel: String): String {
+    if (raw.isNullOrBlank()) return neverLabel
     val instant = runCatching { Instant.parse(raw) }.getOrNull() ?: return raw
     val formatter = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM, FormatStyle.SHORT)
         .withZone(ZoneId.systemDefault())

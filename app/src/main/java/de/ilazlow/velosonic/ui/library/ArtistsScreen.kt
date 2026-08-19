@@ -23,11 +23,13 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import de.ilazlow.velosonic.ui.common.ArtistListRow
 import de.ilazlow.velosonic.ui.common.LibrarySearchField
 import de.ilazlow.velosonic.ui.common.SectionIndexScrubber
+import de.ilazlow.velosonic.ui.settings.SettingsTopBar
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ArtistsScreen(
+    onBack: () -> Unit,
     onArtistClick: (id: String, name: String) -> Unit,
     viewModel: ArtistsViewModel = hiltViewModel()
 ) {
@@ -37,6 +39,7 @@ fun ArtistsScreen(
     val scope = rememberCoroutineScope()
 
     Column(modifier = Modifier.fillMaxSize()) {
+        SettingsTopBar(title = "Artists", onBack = onBack)
         LibrarySearchField(value = searchText, onValueChange = viewModel::onSearchTextChange)
 
         Box(modifier = Modifier.fillMaxSize()) {

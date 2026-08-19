@@ -9,7 +9,9 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import de.ilazlow.velosonic.R
 import de.ilazlow.velosonic.data.datastore.StreamBitrate
 import de.ilazlow.velosonic.data.datastore.StreamFormat
 
@@ -34,21 +36,26 @@ fun TranscodingDetailScreen(
     onCustomFormatChange: (String) -> Unit,
     onCustomBitrateChange: (String) -> Unit
 ) {
+    val customLabel = stringResource(id = R.string.settings_transcoding_custom)
+    val unlimitedLabel = stringResource(id = R.string.settings_transcoding_unlimited)
+    val offLabel = stringResource(id = R.string.settings_transcoding_off)
+    val kbpsFormat = stringResource(id = R.string.settings_transcoding_kbps)
+
     Column(modifier = Modifier.fillMaxSize()) {
         SettingsTopBar(title, onBack)
 
         SettingsPickerRow(
-            label = "Format",
-            valueLabel = if (format == StreamFormat.CUSTOM) "Custom" else format.label,
+            label = stringResource(id = R.string.settings_transcoding_format_label),
+            valueLabel = if (format == StreamFormat.CUSTOM) customLabel else format.label,
             options = StreamFormat.entries,
-            optionLabel = { if (it == StreamFormat.RAW) "Off" else it.label },
+            optionLabel = { if (it == StreamFormat.RAW) offLabel else it.label },
             onSelect = onFormatChange
         )
         if (format == StreamFormat.CUSTOM) {
             OutlinedTextField(
                 value = customFormat,
                 onValueChange = onCustomFormatChange,
-                label = { Text("Custom format (e.g. flac)") },
+                label = { Text(stringResource(id = R.string.settings_transcoding_custom_format_hint)) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 4.dp)
             )
@@ -56,17 +63,17 @@ fun TranscodingDetailScreen(
         HorizontalDivider(modifier = Modifier.padding(horizontal = 20.dp))
 
         SettingsPickerRow(
-            label = "Bitrate",
-            valueLabel = if (bitrate == StreamBitrate.ORIGINAL) "Unlimited" else if (bitrate == StreamBitrate.CUSTOM) "Custom" else "${bitrate.kbps} kbps",
+            label = stringResource(id = R.string.settings_transcoding_bitrate_label),
+            valueLabel = if (bitrate == StreamBitrate.ORIGINAL) unlimitedLabel else if (bitrate == StreamBitrate.CUSTOM) customLabel else String.format(kbpsFormat, bitrate.kbps),
             options = StreamBitrate.entries,
-            optionLabel = { when (it) { StreamBitrate.ORIGINAL -> "Unlimited"; StreamBitrate.CUSTOM -> "Custom"; else -> "${it.kbps} kbps" } },
+            optionLabel = { when (it) { StreamBitrate.ORIGINAL -> unlimitedLabel; StreamBitrate.CUSTOM -> customLabel; else -> String.format(kbpsFormat, it.kbps) } },
             onSelect = onBitrateChange
         )
         if (bitrate == StreamBitrate.CUSTOM) {
             OutlinedTextField(
                 value = customBitrate,
                 onValueChange = { new -> onCustomBitrateChange(new.filter(Char::isDigit)) },
-                label = { Text("Custom bitrate (kbps)") },
+                label = { Text(stringResource(id = R.string.settings_transcoding_custom_bitrate_hint)) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 4.dp)
             )
@@ -75,7 +82,7 @@ fun TranscodingDetailScreen(
         if (onlyLossless != null) {
             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
             SettingsSwitchRow(
-                title = "Only Transcode Lossless",
+                title = stringResource(id = R.string.settings_transcoding_only_lossless),
                 checked = onlyLossless,
                 onCheckedChange = onOnlyLosslessChange
             )

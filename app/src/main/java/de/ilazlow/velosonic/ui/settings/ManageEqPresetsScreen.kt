@@ -31,9 +31,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import de.ilazlow.velosonic.R
 import de.ilazlow.velosonic.data.datastore.EqPreset
 
 /**
@@ -53,8 +55,10 @@ fun ManageEqPresetsScreen(onBack: () -> Unit, viewModel: SettingsViewModel = hil
     var renameText by remember { mutableStateOf("") }
     var deleteTarget by remember { mutableStateOf<EqPreset?>(null) }
 
+    val deleteConfirmTitleFormat = stringResource(id = R.string.settings_eq_manage_delete_confirm_title)
+
     Column(modifier = Modifier.fillMaxSize()) {
-        SettingsTopBar("Manage Presets", onBack)
+        SettingsTopBar(stringResource(id = R.string.settings_eq_manage_title), onBack)
         LazyColumn(modifier = Modifier.fillMaxSize()) {
             items(eq.allPresets, key = { it.id }) { preset ->
                 PresetRow(
@@ -72,7 +76,7 @@ fun ManageEqPresetsScreen(onBack: () -> Unit, viewModel: SettingsViewModel = hil
     renameTarget?.let { preset ->
         AlertDialog(
             onDismissRequest = { renameTarget = null },
-            title = { Text("Rename Preset") },
+            title = { Text(stringResource(id = R.string.settings_eq_manage_rename_title)) },
             text = { OutlinedTextField(value = renameText, onValueChange = { renameText = it }, singleLine = true) },
             confirmButton = {
                 TextButton(
@@ -81,22 +85,22 @@ fun ManageEqPresetsScreen(onBack: () -> Unit, viewModel: SettingsViewModel = hil
                         viewModel.updateEqPreset(preset.copy(name = renameText.trim()))
                         renameTarget = null
                     }
-                ) { Text("Save") }
+                ) { Text(stringResource(id = R.string.settings_eq_manage_save)) }
             },
-            dismissButton = { TextButton(onClick = { renameTarget = null }) { Text("Cancel") } }
+            dismissButton = { TextButton(onClick = { renameTarget = null }) { Text(stringResource(id = R.string.settings_eq_manage_cancel)) } }
         )
     }
 
     deleteTarget?.let { preset ->
         AlertDialog(
             onDismissRequest = { deleteTarget = null },
-            title = { Text("Delete \"${preset.name}\"?") },
+            title = { Text(String.format(deleteConfirmTitleFormat, preset.name)) },
             confirmButton = {
                 TextButton(onClick = { viewModel.deleteEqPreset(preset); deleteTarget = null }) {
-                    Text("Delete", color = MaterialTheme.colorScheme.error)
+                    Text(stringResource(id = R.string.settings_eq_manage_delete), color = MaterialTheme.colorScheme.error)
                 }
             },
-            dismissButton = { TextButton(onClick = { deleteTarget = null }) { Text("Cancel") } }
+            dismissButton = { TextButton(onClick = { deleteTarget = null }) { Text(stringResource(id = R.string.settings_eq_manage_cancel)) } }
         )
     }
 }
@@ -125,9 +129,9 @@ private fun PresetRow(preset: EqPreset, selected: Boolean, onApply: () -> Unit, 
                     Icon(Icons.Filled.MoreVert, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
-                    DropdownMenuItem(text = { Text("Rename") }, onClick = { showMenu = false; onRename() })
+                    DropdownMenuItem(text = { Text(stringResource(id = R.string.settings_eq_manage_rename)) }, onClick = { showMenu = false; onRename() })
                     DropdownMenuItem(
-                        text = { Text("Delete", color = MaterialTheme.colorScheme.error) },
+                        text = { Text(stringResource(id = R.string.settings_eq_manage_delete), color = MaterialTheme.colorScheme.error) },
                         onClick = { showMenu = false; onDelete() }
                     )
                 }

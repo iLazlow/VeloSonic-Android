@@ -15,9 +15,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import de.ilazlow.velosonic.R
 
 /**
  * Every tunable [Kawarp-AGSL](https://github.com/meowarex/kawarp-agsl) exposes, at its own
@@ -28,23 +30,24 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 @Composable
 fun KawarpSettingsScreen(onBack: () -> Unit, viewModel: KawarpSettingsViewModel = hiltViewModel()) {
     val settings by viewModel.settings.collectAsStateWithLifecycle()
+    val msValueFormat = stringResource(id = R.string.settings_kawarp_ms_value)
 
     Column(modifier = Modifier.fillMaxSize()) {
-        SettingsTopBar("Liquid Cover Backdrop", onBack)
+        SettingsTopBar(stringResource(id = R.string.settings_kawarp_title), onBack)
         LazyColumn(modifier = Modifier.fillMaxSize()) {
             item {
                 SettingsSwitchRow(
-                    title = "Liquid Cover Backdrop",
-                    subtitle = "Replace the player's static blurred backdrop with a live, animated warp effect driven by the current cover",
+                    title = stringResource(id = R.string.settings_kawarp_enable_title),
+                    subtitle = stringResource(id = R.string.settings_kawarp_enable_subtitle),
                     checked = settings.enabled,
                     onCheckedChange = viewModel::setEnabled
                 )
             }
             item { HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp)) }
-            item { SettingsSectionHeader("Motion") }
+            item { SettingsSectionHeader(stringResource(id = R.string.settings_kawarp_section_motion)) }
             item {
                 SettingsSliderRow(
-                    title = "Warp Intensity",
+                    title = stringResource(id = R.string.settings_kawarp_warp_intensity),
                     valueLabel = "%.2f".format(settings.warpIntensity),
                     value = settings.warpIntensity,
                     valueRange = 0f..3f,
@@ -54,7 +57,7 @@ fun KawarpSettingsScreen(onBack: () -> Unit, viewModel: KawarpSettingsViewModel 
             }
             item {
                 SettingsSliderRow(
-                    title = "Animation Speed",
+                    title = stringResource(id = R.string.settings_kawarp_animation_speed),
                     valueLabel = "%.2f".format(settings.animationSpeed),
                     value = settings.animationSpeed,
                     valueRange = 0f..3f,
@@ -64,7 +67,7 @@ fun KawarpSettingsScreen(onBack: () -> Unit, viewModel: KawarpSettingsViewModel 
             }
             item {
                 SettingsSliderRow(
-                    title = "Scale",
+                    title = stringResource(id = R.string.settings_kawarp_scale),
                     valueLabel = "%.2f".format(settings.scale),
                     value = settings.scale,
                     valueRange = 0.5f..2f,
@@ -74,8 +77,8 @@ fun KawarpSettingsScreen(onBack: () -> Unit, viewModel: KawarpSettingsViewModel 
             }
             item {
                 SettingsSliderRow(
-                    title = "Transition Duration",
-                    valueLabel = "${settings.transitionDurationMs} ms",
+                    title = stringResource(id = R.string.settings_kawarp_transition_duration),
+                    valueLabel = String.format(msValueFormat, settings.transitionDurationMs),
                     value = settings.transitionDurationMs.toFloat(),
                     valueRange = 0f..3000f,
                     steps = 29,
@@ -84,17 +87,17 @@ fun KawarpSettingsScreen(onBack: () -> Unit, viewModel: KawarpSettingsViewModel 
             }
             item {
                 SettingsSwitchRow(
-                    title = "Playback-Reactive",
-                    subtitle = "Coast the animation to a stop over ~1.8s while paused, instead of freezing mid-motion or continuing at full speed",
+                    title = stringResource(id = R.string.settings_kawarp_playback_reactive),
+                    subtitle = stringResource(id = R.string.settings_kawarp_playback_reactive_subtitle),
                     checked = settings.playbackReactive,
                     onCheckedChange = viewModel::setPlaybackReactive
                 )
             }
             item { HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp)) }
-            item { SettingsSectionHeader("Look") }
+            item { SettingsSectionHeader(stringResource(id = R.string.settings_kawarp_section_look)) }
             item {
                 SettingsSliderRow(
-                    title = "Blur Passes",
+                    title = stringResource(id = R.string.settings_kawarp_blur_passes),
                     valueLabel = settings.blurPasses.toString(),
                     value = settings.blurPasses.toFloat(),
                     valueRange = 1f..40f,
@@ -104,7 +107,7 @@ fun KawarpSettingsScreen(onBack: () -> Unit, viewModel: KawarpSettingsViewModel 
             }
             item {
                 SettingsSliderRow(
-                    title = "Saturation",
+                    title = stringResource(id = R.string.settings_kawarp_saturation),
                     valueLabel = "%.2f".format(settings.saturation),
                     value = settings.saturation,
                     valueRange = 0f..2f,
@@ -114,7 +117,7 @@ fun KawarpSettingsScreen(onBack: () -> Unit, viewModel: KawarpSettingsViewModel 
             }
             item {
                 SettingsSliderRow(
-                    title = "Contrast",
+                    title = stringResource(id = R.string.settings_kawarp_contrast),
                     valueLabel = "%.2f".format(settings.contrast),
                     value = settings.contrast,
                     valueRange = 0f..2f,
@@ -124,7 +127,7 @@ fun KawarpSettingsScreen(onBack: () -> Unit, viewModel: KawarpSettingsViewModel 
             }
             item {
                 SettingsSliderRow(
-                    title = "Brightness",
+                    title = stringResource(id = R.string.settings_kawarp_brightness),
                     valueLabel = "%.2f".format(settings.brightness),
                     value = settings.brightness,
                     valueRange = 0f..2f,
@@ -134,7 +137,7 @@ fun KawarpSettingsScreen(onBack: () -> Unit, viewModel: KawarpSettingsViewModel 
             }
             item {
                 SettingsSliderRow(
-                    title = "Dithering",
+                    title = stringResource(id = R.string.settings_kawarp_dithering),
                     valueLabel = "%.3f".format(settings.dithering),
                     value = settings.dithering,
                     valueRange = 0f..0.05f,
@@ -144,7 +147,7 @@ fun KawarpSettingsScreen(onBack: () -> Unit, viewModel: KawarpSettingsViewModel 
             }
             item {
                 SettingsSliderRow(
-                    title = "Auto-Darken",
+                    title = stringResource(id = R.string.settings_kawarp_auto_darken),
                     valueLabel = "%.2f".format(settings.autoDarken),
                     value = settings.autoDarken,
                     valueRange = 0f..1f,
@@ -153,10 +156,10 @@ fun KawarpSettingsScreen(onBack: () -> Unit, viewModel: KawarpSettingsViewModel 
                 )
             }
             item { HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp)) }
-            item { SettingsSectionHeader("Tint") }
+            item { SettingsSectionHeader(stringResource(id = R.string.settings_kawarp_section_tint)) }
             item {
                 Text(
-                    text = "Dark regions of the cover are pushed toward this color before blurring.",
+                    text = stringResource(id = R.string.settings_kawarp_tint_description),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp)
@@ -164,7 +167,7 @@ fun KawarpSettingsScreen(onBack: () -> Unit, viewModel: KawarpSettingsViewModel 
             }
             item {
                 SettingsSliderRow(
-                    title = "Tint Red",
+                    title = stringResource(id = R.string.settings_kawarp_tint_red),
                     valueLabel = "%.2f".format(settings.tintColorR),
                     value = settings.tintColorR,
                     valueRange = 0f..1f,
@@ -174,7 +177,7 @@ fun KawarpSettingsScreen(onBack: () -> Unit, viewModel: KawarpSettingsViewModel 
             }
             item {
                 SettingsSliderRow(
-                    title = "Tint Green",
+                    title = stringResource(id = R.string.settings_kawarp_tint_green),
                     valueLabel = "%.2f".format(settings.tintColorG),
                     value = settings.tintColorG,
                     valueRange = 0f..1f,
@@ -184,7 +187,7 @@ fun KawarpSettingsScreen(onBack: () -> Unit, viewModel: KawarpSettingsViewModel 
             }
             item {
                 SettingsSliderRow(
-                    title = "Tint Blue",
+                    title = stringResource(id = R.string.settings_kawarp_tint_blue),
                     valueLabel = "%.2f".format(settings.tintColorB),
                     value = settings.tintColorB,
                     valueRange = 0f..1f,
@@ -194,7 +197,7 @@ fun KawarpSettingsScreen(onBack: () -> Unit, viewModel: KawarpSettingsViewModel 
             }
             item {
                 SettingsSliderRow(
-                    title = "Tint Intensity",
+                    title = stringResource(id = R.string.settings_kawarp_tint_intensity),
                     valueLabel = "%.2f".format(settings.tintIntensity),
                     value = settings.tintIntensity,
                     valueRange = 0f..1f,
@@ -209,7 +212,7 @@ fun KawarpSettingsScreen(onBack: () -> Unit, viewModel: KawarpSettingsViewModel 
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     TextButton(onClick = viewModel::resetToDefaults) {
-                        Text("Reset Look to Defaults")
+                        Text(stringResource(id = R.string.settings_kawarp_reset_look))
                     }
                 }
             }

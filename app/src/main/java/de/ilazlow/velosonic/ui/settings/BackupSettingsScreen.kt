@@ -20,10 +20,12 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import de.ilazlow.velosonic.R
 
 /**
  * Simplified port of DatabaseBackupView.swift — see [de.ilazlow.velosonic.data.backup.BackupRepository]'s
@@ -54,12 +56,12 @@ fun BackupSettingsScreen(onBack: () -> Unit, viewModel: BackupSettingsViewModel 
     }
 
     Column(modifier = Modifier.fillMaxSize()) {
-        SettingsTopBar("Backup", onBack)
+        SettingsTopBar(stringResource(id = R.string.settings_backup_title), onBack)
         LazyColumn(modifier = Modifier.fillMaxSize()) {
-            item { SettingsSectionHeader("Export") }
+            item { SettingsSectionHeader(stringResource(id = R.string.settings_backup_section_export)) }
             item {
                 Text(
-                    text = "Saves your library database and app settings to a file you can share or store elsewhere.",
+                    text = stringResource(id = R.string.settings_backup_export_description),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 4.dp)
@@ -70,14 +72,14 @@ fun BackupSettingsScreen(onBack: () -> Unit, viewModel: BackupSettingsViewModel 
                     onClick = viewModel::exportBackup,
                     enabled = state !is BackupUiState.Working,
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp)
-                ) { Text("Export Backup") }
+                ) { Text(stringResource(id = R.string.settings_backup_export_button)) }
             }
 
             item { HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp)) }
-            item { SettingsSectionHeader("Restore") }
+            item { SettingsSectionHeader(stringResource(id = R.string.settings_backup_section_restore)) }
             item {
                 Text(
-                    text = "Restoring replaces your current library database and settings. Server passwords aren't included — you may need to log in again afterward.",
+                    text = stringResource(id = R.string.settings_backup_restore_description),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 4.dp)
@@ -88,12 +90,12 @@ fun BackupSettingsScreen(onBack: () -> Unit, viewModel: BackupSettingsViewModel 
                     onClick = { openDocumentLauncher.launch(arrayOf("application/zip")) },
                     enabled = state !is BackupUiState.Working,
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp)
-                ) { Text("Restore from Backup") }
+                ) { Text(stringResource(id = R.string.settings_backup_restore_button)) }
             }
             if (state is BackupUiState.Error) {
                 item {
                     Text(
-                        text = "Something went wrong. Make sure you picked a valid VeloSonic backup file.",
+                        text = stringResource(id = R.string.settings_backup_error_message),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.error,
                         modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 4.dp)
@@ -106,9 +108,9 @@ fun BackupSettingsScreen(onBack: () -> Unit, viewModel: BackupSettingsViewModel 
     if (state is BackupUiState.RestoreStaged) {
         AlertDialog(
             onDismissRequest = {},
-            title = { Text("Restart Required") },
-            text = { Text("Close and reopen the app to finish restoring your backup.") },
-            confirmButton = { TextButton(onClick = viewModel::reset) { Text("OK") } }
+            title = { Text(stringResource(id = R.string.settings_backup_restart_required_title)) },
+            text = { Text(stringResource(id = R.string.settings_backup_restart_required_text)) },
+            confirmButton = { TextButton(onClick = viewModel::reset) { Text(stringResource(id = R.string.settings_backup_ok)) } }
         )
     }
 }

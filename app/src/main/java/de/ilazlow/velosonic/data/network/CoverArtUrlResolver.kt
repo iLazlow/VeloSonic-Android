@@ -84,4 +84,27 @@ class CoverArtUrlResolver @Inject constructor(
             extraParams = mapOf("id" to trackSubsonicId)
         )
     }
+
+    /** Same as [streamUrlFor] but with the Storage → Download Quality setting's `format`/
+     *  `maxBitRate` params applied — [format]/[maxBitRate] are the already-resolved values (null
+     *  means "omit the param", matching Subsonic's own "no transcoding requested" contract), not
+     *  the raw [de.ilazlow.velosonic.data.datastore.StreamFormat]/[de.ilazlow.velosonic.data.datastore.StreamBitrate]
+     *  enums — see [de.ilazlow.velosonic.data.datastore.resolvedQueryValue]. */
+    fun downloadStreamUrlFor(serverHost: String, trackSubsonicId: String, format: String?, maxBitRate: Int?): String? {
+        val config = configFor(serverHost) ?: return null
+        val params = buildMap {
+            put("id", trackSubsonicId)
+            if (format != null) put("format", format)
+            if (maxBitRate != null) put("maxBitRate", maxBitRate.toString())
+        }
+        return SubsonicUrlBuilder.build(
+            host = config.host,
+            endpoint = "stream",
+            username = config.username,
+            token = config.token,
+            salt = config.salt,
+            useJson = false,
+            extraParams = params
+        )
+    }
 }

@@ -9,8 +9,9 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Metadata
 import androidx.media3.common.Player
+import androidx.media3.datasource.DataSource
 import androidx.media3.datasource.DataSpec
-import androidx.media3.datasource.DefaultHttpDataSource
+import androidx.media3.datasource.okhttp.OkHttpDataSource
 import androidx.media3.datasource.cache.CacheDataSource
 import androidx.media3.datasource.cache.LeastRecentlyUsedCacheEvictor
 import androidx.media3.datasource.cache.SimpleCache
@@ -42,6 +43,7 @@ import de.ilazlow.velosonic.data.playback.ScrobbleQueue
 import de.ilazlow.velosonic.data.sync.compositeId
 import de.ilazlow.velosonic.domain.supportsOpenSubsonicExtensions
 import de.ilazlow.velosonic.domain.supportsReportPlayback
+import okhttp3.OkHttpClient
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -135,11 +137,51 @@ class PlaybackEngine(
         )
     }
 
+    /** A real, modern OkHttp client — deliberately NOT [androidx.media3.datasource.DefaultHttpDataSource],
+     *  which is backed by Android's own bundled/legacy `HttpURLConnection` stack. Confirmed live via
+     *  full response-header logging against an Icecast/Shoutcast radio stream: that platform stack
+     *  silently drops every `icy-*` response header (icy-metaint included) while every other header
+     *  from the exact same response survives — Media3 already sends the `Icy-MetaData: 1` request
+     *  header unconditionally on every load (see ExtractingLoadable's ICY_METADATA_HEADERS), so the
+     *  request side was never the problem. A dedicated client, not the app's shared API `OkHttpClient`
+     *  (Retrofit/auth interceptors have no business anywhere near raw media byte streaming). */
+    private val streamingOkHttpClient: OkHttpClient by lazy { OkHttpClient.Builder().build() }
+
+    private val httpDataSourceFactory: OkHttpDataSource.Factory by lazy {
+        OkHttpDataSource.Factory(streamingOkHttpClient)
+    }
+
     private val streamCacheDataSourceFactory: CacheDataSource.Factory by lazy {
         CacheDataSource.Factory()
             .setCache(cache)
-            .setUpstreamDataSourceFactory(OfflineGatedDataSourceFactory(DefaultHttpDataSource.Factory(), offlineModeGate))
+            .setUpstreamDataSourceFactory(OfflineGatedDataSourceFactory(httpDataSourceFactory, offlineModeGate))
             .setFlags(CacheDataSource.FLAG_IGNORE_CACHE_ON_ERROR)
+    }
+
+    /** Set immediately before every [playRadio] call, cleared by [playQueue] — lets
+     *  [radioBypassDataSourceFactory] recognize a radio station's own request and route it past
+     *  both cache layers (see that factory's doc comment for why caching a live stream breaks ICY
+     *  metadata, confirmed live: a station's stream got cached at http/https response-header
+     *  granularity even though `Accept-Ranges: none`/no `Content-Length` marks it as a live,
+     *  effectively infinite resource — once *anything* was cached for that URL, replaying it
+     *  became a cache hit with no live HTTP response at all, so `IcyHeaders.parse(dataSource.
+     *  getResponseHeaders())` in Media3 could never see `icy-metaint` again for that station,
+     *  regardless of request headers). */
+    private var activeRadioStreamUrl: String? = null
+
+    /** Bypasses [cacheDataSourceFactory]/[streamCacheDataSourceFactory] entirely for whichever
+     *  request matches [activeRadioStreamUrl] — every other request (regular Navidrome track
+     *  streams) goes through the normal cached path unchanged. See [activeRadioStreamUrl]'s doc
+     *  comment for why a live radio stream must never be cached at all, not even the evictable
+     *  stream cache. */
+    private val radioBypassDataSourceFactory: DataSource.Factory by lazy {
+        DataSource.Factory {
+            RadioBypassDataSource(
+                cached = cacheDataSourceFactory.createDataSource(),
+                uncached = OfflineGatedDataSourceFactory(httpDataSourceFactory, offlineModeGate).createDataSource(),
+                isBypassUri = { uri -> uri.toString() == activeRadioStreamUrl }
+            )
+        }
     }
 
     /** Reads from the permanent download cache first (see [DownloadCacheProvider]), falling
@@ -237,6 +279,7 @@ class PlaybackEngine(
         currentPlaylistId = playlistId
         queue = tracks
         _nowPlaying.update { it.copy(radioStation = null, radioStreamTitle = null) }
+        activeRadioStreamUrl = null
         val items = tracks.map { it.toMediaItem() }
         player.setMediaItems(items, startIndex.coerceIn(0, items.lastIndex), 0)
         player.prepare()
@@ -278,6 +321,7 @@ class PlaybackEngine(
             )
             .build()
         _nowPlaying.update { it.copy(radioStation = station, radioStreamTitle = null, track = null, queue = emptyList()) }
+        activeRadioStreamUrl = station.streamUrl
         player.setMediaItem(item)
         player.prepare()
         player.play()
@@ -402,7 +446,7 @@ class PlaybackEngine(
                 true
             )
             .setHandleAudioBecomingNoisy(true)
-            .setMediaSourceFactory(DefaultMediaSourceFactory(cacheDataSourceFactory))
+            .setMediaSourceFactory(DefaultMediaSourceFactory(radioBypassDataSourceFactory))
             .build()
     }
 
@@ -507,7 +551,12 @@ class PlaybackEngine(
             for (i in 0 until metadata.length()) {
                 when (val entry = metadata.get(i)) {
                     is IcyInfo -> {
-                        _nowPlaying.update { it.copy(radioStreamTitle = entry.title) }
+                        // Many Icecast/Shoutcast stations send a literal `StreamTitle='';` (an
+                        // empty, non-null string) between tracks or when the station just doesn't
+                        // tag now-playing info — normalized to null here so every consumer's
+                        // `radioStreamTitle ?: station.name` fallback chain actually falls through
+                        // instead of rendering a blank title.
+                        _nowPlaying.update { it.copy(radioStreamTitle = entry.title?.takeIf(String::isNotBlank)) }
                     }
                     is TextInformationFrame -> {
                         if (entry.description?.uppercase() == "REPLAYGAIN_TRACK_GAIN" || entry.id == "TXXX") {

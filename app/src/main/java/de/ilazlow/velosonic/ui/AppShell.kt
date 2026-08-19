@@ -69,6 +69,7 @@ import de.ilazlow.velosonic.ui.navigation.LibraryGenresRoute
 import de.ilazlow.velosonic.ui.navigation.LibraryRadioRoute
 import de.ilazlow.velosonic.ui.navigation.LibraryRoute
 import de.ilazlow.velosonic.ui.navigation.LibrarySongsRoute
+import de.ilazlow.velosonic.ui.navigation.LikedSongsRoute
 import de.ilazlow.velosonic.ui.navigation.PlaylistDetailRoute
 import de.ilazlow.velosonic.ui.navigation.PlaylistImportRoute
 import de.ilazlow.velosonic.ui.navigation.PlaylistsRoute
@@ -100,6 +101,7 @@ import de.ilazlow.velosonic.ui.navigation.SettingsStorageRoute
 import de.ilazlow.velosonic.ui.navigation.SettingsTranscodingRoute
 import de.ilazlow.velosonic.ui.player.MiniPlayerBar
 import de.ilazlow.velosonic.ui.player.PlayerScreen
+import de.ilazlow.velosonic.ui.playlists.LikedSongsScreen
 import de.ilazlow.velosonic.ui.playlists.PlaylistDetailScreen
 import de.ilazlow.velosonic.ui.playlists.PlaylistImportScreen
 import de.ilazlow.velosonic.ui.playlists.PlaylistsScreen
@@ -235,6 +237,7 @@ fun AppShell(deepLinkViewModel: DeepLinkViewModel = hiltViewModel()) {
                     composable<PlaylistsRoute> {
                         PlaylistsScreen(
                             onPlaylistClick = { navController.navigate(PlaylistDetailRoute(it)) },
+                            onLikedSongsClick = { navController.navigate(LikedSongsRoute) },
                             onImportClick = { navController.navigate(PlaylistImportRoute) }
                         )
                     }
@@ -417,14 +420,23 @@ fun AppShell(deepLinkViewModel: DeepLinkViewModel = hiltViewModel()) {
                     }
 
                     composable<LibraryArtistsRoute> {
-                        ArtistsScreen(onArtistClick = { id, name -> navController.navigate(ArtistDetailRoute(id, name)) })
+                        ArtistsScreen(
+                            onBack = { navController.navigateUp() },
+                            onArtistClick = { id, name -> navController.navigate(ArtistDetailRoute(id, name)) }
+                        )
                     }
                     composable<LibraryAlbumsRoute> {
-                        AlbumsScreen(onAlbumClick = { navController.navigate(AlbumDetailRoute(it)) })
+                        AlbumsScreen(
+                            onBack = { navController.navigateUp() },
+                            onAlbumClick = { navController.navigate(AlbumDetailRoute(it)) }
+                        )
                     }
-                    composable<LibrarySongsRoute> { SongsScreen() }
+                    composable<LibrarySongsRoute> { SongsScreen(onBack = { navController.navigateUp() }) }
                     composable<LibraryGenresRoute> {
-                        GenresScreen(onGenreClick = { navController.navigate(GenreAlbumsRoute(it)) })
+                        GenresScreen(
+                            onBack = { navController.navigateUp() },
+                            onGenreClick = { navController.navigate(GenreAlbumsRoute(it)) }
+                        )
                     }
                     composable<GenreAlbumsRoute> {
                         GenreAlbumsScreen(
@@ -434,13 +446,15 @@ fun AppShell(deepLinkViewModel: DeepLinkViewModel = hiltViewModel()) {
                     }
                     composable<LibraryFavoritesRoute> {
                         FavoritesScreen(
+                            onBack = { navController.navigateUp() },
                             onArtistClick = { id, name -> navController.navigate(ArtistDetailRoute(id, name)) },
                             onAlbumClick = { navController.navigate(AlbumDetailRoute(it)) }
                         )
                     }
-                    composable<LibraryRadioRoute> { RadioScreen() }
+                    composable<LibraryRadioRoute> { RadioScreen(onBack = { navController.navigateUp() }) }
                     composable<LibraryDownloadsRoute> {
                         DownloadsScreen(
+                            onBack = { navController.navigateUp() },
                             onPlaylistClick = { navController.navigate(PlaylistDetailRoute(it)) },
                             onAlbumClick = { navController.navigate(AlbumDetailRoute(it)) },
                             onArtistClick = { id, name -> navController.navigate(ArtistDetailRoute(id, name)) }
@@ -462,6 +476,13 @@ fun AppShell(deepLinkViewModel: DeepLinkViewModel = hiltViewModel()) {
                     }
                     composable<PlaylistDetailRoute> {
                         PlaylistDetailScreen(
+                            onBack = { navController.navigateUp() },
+                            onAlbumClick = { navController.navigate(AlbumDetailRoute(it)) },
+                            onArtistClick = { id, name -> navController.navigate(ArtistDetailRoute(id, name)) }
+                        )
+                    }
+                    composable<LikedSongsRoute> {
+                        LikedSongsScreen(
                             onBack = { navController.navigateUp() },
                             onAlbumClick = { navController.navigate(AlbumDetailRoute(it)) },
                             onArtistClick = { id, name -> navController.navigate(ArtistDetailRoute(id, name)) }

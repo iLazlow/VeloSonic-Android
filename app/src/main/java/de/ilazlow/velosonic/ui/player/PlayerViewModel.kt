@@ -12,7 +12,9 @@ import de.ilazlow.velosonic.data.datastore.KawarpSettings
 import de.ilazlow.velosonic.data.datastore.KawarpSettingsStore
 import de.ilazlow.velosonic.data.datastore.LyricsSettingsStore
 import de.ilazlow.velosonic.data.datastore.PlaybackSettingsStore
+import de.ilazlow.velosonic.data.LibraryRepository
 import de.ilazlow.velosonic.data.db.ArtistEntry
+import de.ilazlow.velosonic.data.db.RadioStationEntity
 import de.ilazlow.velosonic.data.db.TrackEntity
 import de.ilazlow.velosonic.data.download.DownloadRepository
 import de.ilazlow.velosonic.data.lyrics.LyricsRepository
@@ -56,11 +58,28 @@ class PlayerViewModel @Inject constructor(
     private val animatedArtworkRepository: AnimatedArtworkRepository,
     private val downloadRepository: DownloadRepository,
     private val playbackSettingsStore: PlaybackSettingsStore,
+    private val libraryRepository: LibraryRepository,
     lyricsSettingsStore: LyricsSettingsStore,
     appearanceSettingsStore: AppearanceSettingsStore,
     kawarpSettingsStore: KawarpSettingsStore
 ) : ViewModel() {
     val nowPlaying: StateFlow<NowPlaying> = playbackController.nowPlaying
+
+    /** Mirrors iOS's `moreRadioStationsSection`: every other station on the same server as the one
+     *  currently playing, all shown (no cap) — an empty list hides the whole section. */
+    val otherRadioStations: StateFlow<List<RadioStationEntity>> = nowPlaying
+        .flatMapLatest { np ->
+            val current = np.radioStation
+            if (current == null) {
+                flowOf(emptyList())
+            } else {
+                libraryRepository.observeRadioStations()
+                    .map { stations -> stations.filter { it.serverHost == current.serverHost && it.id != current.id } }
+            }
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    fun playRadioStation(station: RadioStationEntity) = playbackController.playRadio(station)
 
     val downloads: StateFlow<Map<String, Download>> = downloadRepository.downloads
 

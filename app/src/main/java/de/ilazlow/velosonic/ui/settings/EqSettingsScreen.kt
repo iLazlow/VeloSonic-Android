@@ -37,9 +37,11 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import de.ilazlow.velosonic.R
 import de.ilazlow.velosonic.playback.EQ_BAND_FREQUENCIES
 import de.ilazlow.velosonic.playback.EQ_GAIN_MAX
 import de.ilazlow.velosonic.playback.EQ_GAIN_MIN
@@ -63,19 +65,21 @@ fun EqSettingsScreen(
 
     val selectedPreset = eq.allPresets.firstOrNull { it.id == eq.selectedPresetId }
 
+    val customLabel = stringResource(id = R.string.settings_eq_custom)
+
     Column(modifier = Modifier.fillMaxSize()) {
-        SettingsTopBar("Equalizer", onBack)
+        SettingsTopBar(stringResource(id = R.string.settings_eq_title), onBack)
         LazyColumn(modifier = Modifier.fillMaxSize()) {
             item {
                 SettingsSwitchRow(
-                    title = "Enable Equalizer",
-                    subtitle = "Applies the band gains below to all local playback.",
+                    title = stringResource(id = R.string.settings_eq_enable),
+                    subtitle = stringResource(id = R.string.settings_eq_enable_subtitle),
                     checked = eq.enabled,
                     onCheckedChange = viewModel::setEqEnabled
                 )
             }
             item { HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp)) }
-            item { SettingsSectionHeader("Presets") }
+            item { SettingsSectionHeader(stringResource(id = R.string.settings_eq_section_presets)) }
             item {
                 Box {
                     Row(
@@ -85,9 +89,9 @@ fun EqSettingsScreen(
                             .padding(horizontal = 20.dp, vertical = 12.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(text = "Preset", style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
+                        Text(text = stringResource(id = R.string.settings_eq_preset_label), style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
                         Text(
-                            text = selectedPreset?.name ?: "Custom",
+                            text = selectedPreset?.name ?: customLabel,
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -105,12 +109,12 @@ fun EqSettingsScreen(
             }
             item {
                 Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-                    TextButton(onClick = { presetName = ""; showSaveDialog = true }) { Text("Save as Preset") }
-                    TextButton(onClick = onManagePresets) { Text("Manage Presets") }
+                    TextButton(onClick = { presetName = ""; showSaveDialog = true }) { Text(stringResource(id = R.string.settings_eq_save_as_preset)) }
+                    TextButton(onClick = onManagePresets) { Text(stringResource(id = R.string.settings_eq_manage_presets)) }
                 }
             }
             item { HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp)) }
-            item { SettingsSectionHeader("Bands") }
+            item { SettingsSectionHeader(stringResource(id = R.string.settings_eq_section_bands)) }
             item {
                 Row(
                     modifier = Modifier
@@ -131,7 +135,7 @@ fun EqSettingsScreen(
             }
             item {
                 Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                    TextButton(onClick = viewModel::resetEqToFlat, enabled = eq.enabled) { Text("Reset to Flat") }
+                    TextButton(onClick = viewModel::resetEqToFlat, enabled = eq.enabled) { Text(stringResource(id = R.string.settings_eq_reset_to_flat)) }
                 }
             }
         }
@@ -140,23 +144,24 @@ fun EqSettingsScreen(
     if (showSaveDialog) {
         AlertDialog(
             onDismissRequest = { showSaveDialog = false },
-            title = { Text("Save Preset") },
+            title = { Text(stringResource(id = R.string.settings_eq_save_preset_title)) },
             text = {
-                OutlinedTextField(value = presetName, onValueChange = { presetName = it }, label = { Text("Name") }, singleLine = true)
+                OutlinedTextField(value = presetName, onValueChange = { presetName = it }, label = { Text(stringResource(id = R.string.settings_eq_name_label)) }, singleLine = true)
             },
             confirmButton = {
                 TextButton(
                     enabled = presetName.isNotBlank(),
                     onClick = { viewModel.saveCurrentEqAsPreset(presetName.trim()); showSaveDialog = false }
-                ) { Text("Save") }
+                ) { Text(stringResource(id = R.string.settings_eq_save)) }
             },
-            dismissButton = { TextButton(onClick = { showSaveDialog = false }) { Text("Cancel") } }
+            dismissButton = { TextButton(onClick = { showSaveDialog = false }) { Text(stringResource(id = R.string.settings_eq_cancel)) } }
         )
     }
 }
 
 @Composable
 private fun BandColumn(frequency: Float, gain: Float, enabled: Boolean, onValueChange: (Float) -> Unit) {
+    val khzFormat = stringResource(id = R.string.settings_eq_freq_khz_label)
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text(
             text = gainLabel(gain),
@@ -170,7 +175,7 @@ private fun BandColumn(frequency: Float, gain: Float, enabled: Boolean, onValueC
             enabled = enabled,
             modifier = Modifier.width(28.dp).height(140.dp)
         )
-        Text(text = freqLabel(frequency), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(text = freqLabel(frequency, khzFormat), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 
@@ -247,5 +252,5 @@ private fun gainLabel(gain: Float): String {
     return if (gain > 0) "+$rounded" else "$rounded"
 }
 
-private fun freqLabel(frequency: Float): String =
-    if (frequency >= 1000f) "${(frequency / 1000f).toInt()}k" else frequency.toInt().toString()
+private fun freqLabel(frequency: Float, khzFormat: String): String =
+    if (frequency >= 1000f) String.format(khzFormat, (frequency / 1000f).toInt()) else frequency.toInt().toString()

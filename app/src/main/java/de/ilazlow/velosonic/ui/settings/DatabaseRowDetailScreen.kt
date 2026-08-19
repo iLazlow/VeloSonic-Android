@@ -18,9 +18,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import de.ilazlow.velosonic.R
 
 /** Mirrors iOS's `DatabaseRowDetailView` — every column/value for one row, gated behind an
  *  "enable editing" toggle before any field becomes writable (raw `UPDATE` on save). */
@@ -37,17 +39,17 @@ fun DatabaseRowDetailScreen(
     LaunchedEffect(tableName, rowId) { viewModel.load(tableName, rowId) }
 
     Column(modifier = Modifier.fillMaxSize()) {
-        SettingsTopBar("Row $rowId", onBack)
+        SettingsTopBar(stringResource(id = R.string.settings_database_row_title, rowId), onBack)
         SettingsSwitchRow(
-            title = "Enable Editing",
-            subtitle = "Changes are written directly to the database and cannot be undone",
+            title = stringResource(id = R.string.settings_database_enable_editing),
+            subtitle = stringResource(id = R.string.settings_database_enable_editing_subtitle),
             checked = editingEnabled,
             onCheckedChange = viewModel::setEditingEnabled
         )
         HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
         val currentRow = row
         if (currentRow == null) {
-            Text("Loading…", modifier = Modifier.padding(20.dp))
+            Text(stringResource(id = R.string.settings_database_loading), modifier = Modifier.padding(20.dp))
         } else {
             LazyColumn(modifier = Modifier.fillMaxSize()) {
                 items(currentRow.values.entries.toList(), key = { it.key }) { (column, value) ->
@@ -81,12 +83,12 @@ private fun RowFieldEditor(column: String, value: String?, editable: Boolean, on
                     onClick = { onSave(text.ifEmpty { null }) },
                     modifier = Modifier.padding(top = 4.dp)
                 ) {
-                    Text("Save")
+                    Text(stringResource(id = R.string.settings_database_save))
                 }
             }
         } else {
             Text(
-                text = value ?: "NULL",
+                text = value ?: stringResource(id = R.string.settings_database_null_value),
                 style = MaterialTheme.typography.bodyMedium,
                 color = if (value == null) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.padding(top = 2.dp)

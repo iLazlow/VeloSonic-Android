@@ -22,9 +22,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import de.ilazlow.velosonic.R
 
 /** Mirrors iOS's `DatabaseViewerView` — a searchable list of every SQLite table + its row count. */
 @Composable
@@ -37,11 +39,11 @@ fun DatabaseViewerScreen(onBack: () -> Unit, onTableClick: (String) -> Unit, vie
     }
 
     Column(modifier = Modifier.fillMaxSize()) {
-        SettingsTopBar("Database Viewer", onBack)
+        SettingsTopBar(stringResource(id = R.string.settings_database_viewer_title), onBack)
         OutlinedTextField(
             value = query,
             onValueChange = { query = it },
-            label = { Text("Search tables") },
+            label = { Text(stringResource(id = R.string.settings_database_search_tables)) },
             singleLine = true,
             modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp)
         )
@@ -60,13 +62,13 @@ fun DatabaseViewerScreen(onBack: () -> Unit, onTableClick: (String) -> Unit, vie
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Text(text = table.name, style = MaterialTheme.typography.bodyLarge)
-                        Text(text = "${table.rowCount} rows", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(text = stringResource(id = R.string.settings_database_row_count, table.rowCount), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                     HorizontalDivider(modifier = Modifier.padding(horizontal = 20.dp))
                 }
                 item {
                     Text(
-                        text = "Danger Zone: this is a raw view of the app's database. Editing rows directly can corrupt your library and is not reversible.",
+                        text = stringResource(id = R.string.settings_database_danger_zone),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.error,
                         modifier = Modifier.padding(20.dp)

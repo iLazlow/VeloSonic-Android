@@ -15,11 +15,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import de.ilazlow.velosonic.R
 
 /** Mirrors iOS's `LogContentView` — the full (not just last-80-lines) session log, with its own
  *  search filter. */
@@ -32,11 +34,11 @@ fun DebugFullLogScreen(onBack: () -> Unit, viewModel: DebugSettingsViewModel = h
     }
 
     Column(modifier = Modifier.fillMaxSize()) {
-        SettingsTopBar("Full Log", onBack)
+        SettingsTopBar(stringResource(id = R.string.settings_debug_log_full_title), onBack)
         OutlinedTextField(
             value = searchQuery,
             onValueChange = { searchQuery = it },
-            label = { androidx.compose.material3.Text("Search log") },
+            label = { androidx.compose.material3.Text(stringResource(id = R.string.settings_debug_search_log)) },
             singleLine = true,
             modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp)
         )
@@ -48,7 +50,7 @@ fun DebugFullLogScreen(onBack: () -> Unit, viewModel: DebugSettingsViewModel = h
                 .padding(horizontal = 20.dp)
         ) {
             if (filteredLines.isEmpty()) {
-                Text("No log entries yet.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(stringResource(id = R.string.settings_debug_no_log_entries), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             } else {
                 filteredLines.forEach { line ->
                     Text(text = line, fontSize = 11.sp, fontFamily = FontFamily.Monospace, color = MaterialTheme.colorScheme.onSurfaceVariant)

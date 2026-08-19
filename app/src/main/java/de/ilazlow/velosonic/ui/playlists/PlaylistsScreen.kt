@@ -29,6 +29,7 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.FilterAlt
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.LibraryMusic
 import androidx.compose.material.icons.filled.MoreVert
@@ -37,6 +38,8 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.outlined.FilterAlt
 import androidx.compose.material.icons.outlined.PushPin
 import androidx.compose.material3.AlertDialog
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
@@ -83,6 +86,7 @@ private val PlaylistSortOrder.label: String
 @Composable
 fun PlaylistsScreen(
     onPlaylistClick: (String) -> Unit,
+    onLikedSongsClick: () -> Unit = {},
     onImportClick: () -> Unit = {},
     viewModel: PlaylistsViewModel = hiltViewModel()
 ) {
@@ -97,6 +101,11 @@ fun PlaylistsScreen(
     var showCreateSheet by remember { mutableStateOf(false) }
     var renameTarget by remember { mutableStateOf<PlaylistEntity?>(null) }
     var deleteTarget by remember { mutableStateOf<PlaylistEntity?>(null) }
+
+    // Mirrors iOS's `showLikedSongsRow()` — always shown unless the user is actively searching
+    // for something that doesn't match "Liked Songs" by name (not gated on whether anything is
+    // actually starred; an empty Liked Songs still opens to its own empty state).
+    val showLikedSongsRow = searchText.isBlank() || "Liked Songs".contains(searchText, ignoreCase = true)
 
     val filtered = remember(playlists, searchText) {
         if (searchText.isBlank()) playlists else playlists.filter { it.name.contains(searchText, ignoreCase = true) }
@@ -239,7 +248,7 @@ fun PlaylistsScreen(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 4.dp)
         )
 
-        if (playlists.isEmpty()) {
+        if (playlists.isEmpty() && !showLikedSongsRow) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Text(
                     text = "No playlists yet.\nCreate one from the menu above.",
@@ -253,6 +262,8 @@ fun PlaylistsScreen(
                 mine = mine,
                 shared = shared,
                 serverGroups = serverGroups,
+                showLikedSongsRow = showLikedSongsRow,
+                onLikedSongsClick = onLikedSongsClick,
                 coverArtUrl = { p -> viewModel.coverArtUrl(p.serverHost, p.coverArt) },
                 downloadStatus = { p -> viewModel.downloadStatus(p, downloads) },
                 onPlaylistClick = onPlaylistClick,
@@ -262,6 +273,9 @@ fun PlaylistsScreen(
             )
         } else {
             LazyColumn(modifier = Modifier.fillMaxSize()) {
+                if (showLikedSongsRow) {
+                    item { LikedSongsRow(onClick = onLikedSongsClick) }
+                }
                 if (serverGroups.isNotEmpty()) {
                     serverGroups.forEach { group ->
                         val serverLabel = group.server.name.ifBlank { group.server.host }
@@ -390,6 +404,36 @@ private fun SectionHeader(title: String) {
     )
 }
 
+/** The "Liked Songs" pseudo-playlist row — mirrors iOS's `LikedSongsRow`/`LikedSongsGridItem`
+ *  (both rendered as this same full-width row shape, even in grid mode): a pink→red gradient
+ *  tile with a heart glyph instead of cover art, distinguishing it from every real playlist. */
+@Composable
+private fun LikedSongsRow(onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(horizontal = 20.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .size(50.dp)
+                .clip(RoundedCornerShape(6.dp))
+                .background(
+                    Brush.linearGradient(
+                        listOf(Color(0xFFFF69B4).copy(alpha = 0.8f), Color(0xFFFF3B30).copy(alpha = 0.6f))
+                    )
+                ),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(Icons.Filled.Favorite, contentDescription = null, tint = Color.White, modifier = Modifier.size(24.dp))
+        }
+        Text(text = "Liked Songs", style = MaterialTheme.typography.bodyLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
+    }
+}
+
 @Composable
 private fun PlaylistRow(
     playlist: PlaylistEntity,
@@ -480,6 +524,8 @@ private fun PlaylistGridContent(
     mine: List<PlaylistEntity>,
     shared: List<PlaylistEntity>,
     serverGroups: List<ServerPlaylistGroup>,
+    showLikedSongsRow: Boolean,
+    onLikedSongsClick: () -> Unit,
     coverArtUrl: (PlaylistEntity) -> String?,
     downloadStatus: (PlaylistEntity) -> PlaylistDownloadStatus,
     onPlaylistClick: (String) -> Unit,
@@ -494,6 +540,9 @@ private fun PlaylistGridContent(
         verticalArrangement = Arrangement.spacedBy(16.dp),
         modifier = Modifier.fillMaxSize()
     ) {
+        if (showLikedSongsRow) {
+            item(span = { GridItemSpan(maxLineSpan) }) { LikedSongsRow(onClick = onLikedSongsClick) }
+        }
         if (serverGroups.isNotEmpty()) {
             serverGroups.forEach { group ->
                 val serverLabel = group.server.name.ifBlank { group.server.host }

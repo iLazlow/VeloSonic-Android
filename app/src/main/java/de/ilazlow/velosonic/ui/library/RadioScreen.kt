@@ -32,19 +32,21 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import de.ilazlow.velosonic.ui.common.CoverArtTile
 import de.ilazlow.velosonic.ui.common.LibrarySearchField
+import de.ilazlow.velosonic.ui.settings.SettingsTopBar
 
 /** Mirrors LibraryRadioView.swift's RadioStationRow: tap starts the station (or toggles pause if
  *  it's already the current one), artwork via the `ra-{subsonicId}` cover-art id convention
  *  (falling back to a plain radio glyph when the server has none), and a server badge since radio
  *  stations are combined across every visible server just like everything else in Library. */
 @Composable
-fun RadioScreen(viewModel: RadioViewModel = hiltViewModel()) {
+fun RadioScreen(onBack: () -> Unit, viewModel: RadioViewModel = hiltViewModel()) {
     val stations by viewModel.stations.collectAsStateWithLifecycle()
     val nowPlaying by viewModel.nowPlaying.collectAsStateWithLifecycle()
     val serverNames by viewModel.serverNames.collectAsStateWithLifecycle()
     val searchText by viewModel.searchText.collectAsStateWithLifecycle()
 
     Column(modifier = Modifier.fillMaxSize()) {
+        SettingsTopBar(title = "Radio", onBack = onBack)
         LibrarySearchField(value = searchText, onValueChange = viewModel::onSearchTextChange)
 
         if (stations.isEmpty()) {

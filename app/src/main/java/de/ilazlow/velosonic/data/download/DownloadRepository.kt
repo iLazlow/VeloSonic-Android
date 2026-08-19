@@ -9,6 +9,9 @@ import androidx.media3.exoplayer.offline.DownloadService
 import dagger.hilt.android.qualifiers.ApplicationContext
 import de.ilazlow.velosonic.data.artwork.AnimatedArtworkRepository
 import de.ilazlow.velosonic.data.artwork.PermanentArtworkStore
+import de.ilazlow.velosonic.data.datastore.StorageSettings
+import de.ilazlow.velosonic.data.datastore.StorageSettingsStore
+import de.ilazlow.velosonic.data.datastore.resolvedQueryValue
 import de.ilazlow.velosonic.data.debug.LogManager
 import de.ilazlow.velosonic.data.db.StandaloneDownloadDao
 import de.ilazlow.velosonic.data.db.StandaloneDownloadEntity
@@ -64,10 +67,22 @@ class DownloadRepository @Inject constructor(
     private val permanentArtworkStore: PermanentArtworkStore,
     private val animatedArtworkRepository: AnimatedArtworkRepository,
     private val logManager: LogManager,
+    private val storageSettingsStore: StorageSettingsStore,
     @ApplicationScope private val appScope: CoroutineScope
 ) {
     private val _downloads = MutableStateFlow<Map<String, Download>>(emptyMap())
     val downloads: StateFlow<Map<String, Download>> = _downloads.asStateFlow()
+
+    // [downloadTrack] is a plain (non-suspend) call from many UI sites — kept up to date via this
+    // background collector instead of a `runBlocking` DataStore read on every download tap, same
+    // pattern PlaybackEngine uses for its own live-settings field.
+    private var storageSettings = StorageSettings()
+
+    init {
+        appScope.launch {
+            storageSettingsStore.settings.collect { storageSettings = it }
+        }
+    }
 
     // Tracks which download ids belong in the "activity" view (the queue/progress screen) —
     // deliberately NOT every completed download ever made (the Downloads library screen already
@@ -164,7 +179,9 @@ class DownloadRepository @Inject constructor(
 
     fun downloadTrack(track: TrackEntity, partOfBulkGroup: Boolean = false) {
         if (isActiveOrDownloaded(track.id)) return
-        val streamUrl = subsonicClient.streamUrlFor(track.serverHost, track.subsonicId) ?: return
+        val format = storageSettings.downloadFormat.resolvedQueryValue(storageSettings.customDownloadFormat)
+        val maxBitRate = storageSettings.downloadBitrate.resolvedQueryValue(storageSettings.customDownloadBitrate)
+        val streamUrl = subsonicClient.downloadStreamUrlFor(track.serverHost, track.subsonicId, format, maxBitRate) ?: return
         val metadata = Json.encodeToString(DownloadRequestMetadata(track.title, track.artistName))
         val request = DownloadRequest.Builder(track.id, Uri.parse(streamUrl))
             .setData(metadata.toByteArray(Charsets.UTF_8))

@@ -28,6 +28,9 @@ class PlaybackSubsonicClient @Inject constructor(
     fun streamUrlFor(serverHost: String, trackSubsonicId: String): String? =
         coverArtUrlResolver.streamUrlFor(serverHost, trackSubsonicId)
 
+    fun downloadStreamUrlFor(serverHost: String, trackSubsonicId: String, format: String?, maxBitRate: Int?): String? =
+        coverArtUrlResolver.downloadStreamUrlFor(serverHost, trackSubsonicId, format, maxBitRate)
+
     /** Traditional Subsonic scrobble — updates Navidrome's play count/history and, if
      *  configured server-side, submits to Last.fm. `submission=false` is the "now playing"
      *  ping variant; `true` records the play. `time` (epoch ms) lets a scrobble that was queued

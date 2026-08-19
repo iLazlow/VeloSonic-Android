@@ -14,14 +14,16 @@ import de.ilazlow.velosonic.ui.common.NowPlayingIndicator
 import de.ilazlow.velosonic.ui.common.TrackListRow
 import de.ilazlow.velosonic.ui.common.LibrarySearchField
 import de.ilazlow.velosonic.ui.common.formatTrackDuration
+import de.ilazlow.velosonic.ui.settings.SettingsTopBar
 
 @Composable
-fun SongsScreen(viewModel: SongsViewModel = hiltViewModel()) {
+fun SongsScreen(onBack: () -> Unit, viewModel: SongsViewModel = hiltViewModel()) {
     val tracks by viewModel.tracks.collectAsStateWithLifecycle()
     val nowPlaying by viewModel.nowPlaying.collectAsStateWithLifecycle()
     val searchText by viewModel.searchText.collectAsStateWithLifecycle()
 
     Column(modifier = Modifier.fillMaxSize()) {
+        SettingsTopBar(title = "Songs", onBack = onBack)
         LibrarySearchField(value = searchText, onValueChange = viewModel::onSearchTextChange)
         LazyColumn(modifier = Modifier.fillMaxSize()) {
             items(tracks, key = { it.id }) { track ->

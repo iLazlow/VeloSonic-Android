@@ -41,12 +41,14 @@ import de.ilazlow.velosonic.ui.common.LibrarySearchField
 import de.ilazlow.velosonic.ui.common.NowPlayingIndicator
 import de.ilazlow.velosonic.ui.common.TrackListRow
 import de.ilazlow.velosonic.ui.common.formatTrackDuration
+import de.ilazlow.velosonic.ui.settings.SettingsTopBar
 
 /** Mirrors `LibraryFavoritesView.swift`: three independently-hideable sections (Artists carousel,
  *  Albums grid, Songs list) instead of a flat song list, plus a manual "refresh starred" action
  *  (iOS's `syncStarred`) since starred state can otherwise only change on the next scheduled sync. */
 @Composable
 fun FavoritesScreen(
+    onBack: () -> Unit,
     onArtistClick: (id: String, name: String) -> Unit,
     onAlbumClick: (String) -> Unit,
     viewModel: FavoritesViewModel = hiltViewModel()
@@ -59,24 +61,19 @@ fun FavoritesScreen(
     val searchText by viewModel.searchText.collectAsStateWithLifecycle()
 
     Column(modifier = Modifier.fillMaxSize()) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = "Favorites",
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.weight(1f)
-            )
-            IconButton(onClick = viewModel::refreshStarred, enabled = !isSyncing) {
-                if (isSyncing) {
-                    CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
-                } else {
-                    Icon(Icons.Filled.Refresh, contentDescription = "Refresh")
+        SettingsTopBar(
+            title = "Favorites",
+            onBack = onBack,
+            actions = {
+                IconButton(onClick = viewModel::refreshStarred, enabled = !isSyncing) {
+                    if (isSyncing) {
+                        CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                    } else {
+                        Icon(Icons.Filled.Refresh, contentDescription = "Refresh")
+                    }
                 }
             }
-        }
+        )
         LibrarySearchField(value = searchText, onValueChange = viewModel::onSearchTextChange)
 
         if (artists.isEmpty() && albums.isEmpty() && songs.isEmpty() && !isSyncing) {

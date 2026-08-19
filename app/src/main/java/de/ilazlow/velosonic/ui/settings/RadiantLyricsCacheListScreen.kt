@@ -31,10 +31,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import de.ilazlow.velosonic.R
 import de.ilazlow.velosonic.data.lyrics.RadiantLyricsCacheSummary
 import java.text.DateFormat
 import java.util.Date
@@ -48,19 +50,19 @@ fun RadiantLyricsCacheListScreen(onBack: () -> Unit, onEntryClick: (String) -> U
 
     Column(modifier = Modifier.fillMaxSize()) {
         SettingsTopBar(
-            title = "Cached Lyrics",
+            title = stringResource(id = R.string.settings_radiant_list_title),
             onBack = onBack,
             actions = {
                 if (entries.isNotEmpty()) {
                     IconButton(onClick = { confirmClearAll = true }) {
-                        Icon(Icons.Filled.Delete, contentDescription = "Clear All", tint = MaterialTheme.colorScheme.error)
+                        Icon(Icons.Filled.Delete, contentDescription = stringResource(id = R.string.settings_radiant_clear_all_content_description), tint = MaterialTheme.colorScheme.error)
                     }
                 }
             }
         )
         if (entries.isEmpty()) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("No cached lyrics yet", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(stringResource(id = R.string.settings_radiant_empty_state), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         } else {
             LazyColumn(modifier = Modifier.fillMaxSize()) {
@@ -70,7 +72,7 @@ fun RadiantLyricsCacheListScreen(onBack: () -> Unit, onEntryClick: (String) -> U
                 }
                 item {
                     Text(
-                        text = "${entries.size} cached",
+                        text = stringResource(id = R.string.settings_radiant_cached_count, entries.size),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(20.dp)
@@ -83,14 +85,14 @@ fun RadiantLyricsCacheListScreen(onBack: () -> Unit, onEntryClick: (String) -> U
     if (confirmClearAll) {
         AlertDialog(
             onDismissRequest = { confirmClearAll = false },
-            title = { Text("Clear Radiant Cache") },
-            text = { Text("This deletes every cached word-synced lyrics entry on this device. Nothing is removed from the server.") },
+            title = { Text(stringResource(id = R.string.settings_radiant_clear_all_dialog_title)) },
+            text = { Text(stringResource(id = R.string.settings_radiant_clear_all_dialog_message)) },
             confirmButton = {
                 TextButton(onClick = { viewModel.clearAll(); confirmClearAll = false }) {
-                    Text("Clear", color = MaterialTheme.colorScheme.error)
+                    Text(stringResource(id = R.string.settings_radiant_clear), color = MaterialTheme.colorScheme.error)
                 }
             },
-            dismissButton = { TextButton(onClick = { confirmClearAll = false }) { Text("Cancel") } }
+            dismissButton = { TextButton(onClick = { confirmClearAll = false }) { Text(stringResource(id = R.string.settings_radiant_cancel)) } }
         )
     }
 }
@@ -105,9 +107,12 @@ private fun CacheEntryRow(entry: RadiantLyricsCacheSummary, onClick: () -> Unit,
             Text(entry.title, style = MaterialTheme.typography.bodyLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Text(entry.artist, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.padding(top = 4.dp)) {
-                BadgeChip(icon = if (entry.hasWordTiming) Icons.Filled.GraphicEq else Icons.Filled.FormatAlignLeft, label = if (entry.hasWordTiming) "Word-by-word" else "Line-by-line")
-                if (entry.romanized) BadgeChip(icon = Icons.Filled.TextFormat, label = "Romanized")
-                if (entry.aiSynthesized) BadgeChip(icon = Icons.Filled.AutoAwesome, label = "AI Synthesize")
+                BadgeChip(
+                    icon = if (entry.hasWordTiming) Icons.Filled.GraphicEq else Icons.Filled.FormatAlignLeft,
+                    label = if (entry.hasWordTiming) stringResource(id = R.string.settings_radiant_word_by_word) else stringResource(id = R.string.settings_radiant_line_by_line)
+                )
+                if (entry.romanized) BadgeChip(icon = Icons.Filled.TextFormat, label = stringResource(id = R.string.settings_radiant_romanized))
+                if (entry.aiSynthesized) BadgeChip(icon = Icons.Filled.AutoAwesome, label = stringResource(id = R.string.settings_radiant_ai_synthesize))
             }
         }
         Text(
@@ -116,7 +121,7 @@ private fun CacheEntryRow(entry: RadiantLyricsCacheSummary, onClick: () -> Unit,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         IconButton(onClick = onDelete) {
-            Icon(Icons.Filled.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
+            Icon(Icons.Filled.Delete, contentDescription = stringResource(id = R.string.settings_radiant_delete), tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
         }
     }
 }

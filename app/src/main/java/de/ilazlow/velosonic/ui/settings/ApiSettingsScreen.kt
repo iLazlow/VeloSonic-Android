@@ -25,11 +25,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import de.ilazlow.velosonic.R
 import kotlinx.coroutines.delay
 
 /** Mirrors APISettingsView.swift — Spotify Client ID/Secret for playlist import, stored via
@@ -49,20 +51,20 @@ fun ApiSettingsScreen(onBack: () -> Unit, viewModel: ApiSettingsViewModel = hilt
     }
 
     Column(modifier = Modifier.fillMaxSize()) {
-        SettingsTopBar("API", onBack)
-        SettingsSectionHeader("Spotify")
+        SettingsTopBar(stringResource(id = R.string.settings_api_title), onBack)
+        SettingsSectionHeader(stringResource(id = R.string.settings_api_section_spotify))
         Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp)) {
             OutlinedTextField(
                 value = clientId,
                 onValueChange = viewModel::setClientId,
-                label = { Text("Client ID") },
+                label = { Text(stringResource(id = R.string.settings_api_client_id_label)) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)
             )
             OutlinedTextField(
                 value = clientSecret,
                 onValueChange = viewModel::setClientSecret,
-                label = { Text("Client Secret") },
+                label = { Text(stringResource(id = R.string.settings_api_client_secret_label)) },
                 singleLine = true,
                 visualTransformation = if (showSecret) VisualTransformation.None else PasswordVisualTransformation(),
                 trailingIcon = {
@@ -73,7 +75,7 @@ fun ApiSettingsScreen(onBack: () -> Unit, viewModel: ApiSettingsViewModel = hilt
                 modifier = Modifier.fillMaxWidth()
             )
             Text(
-                text = "Used to import Spotify playlists. Create an app at developer.spotify.com to get these values.",
+                text = stringResource(id = R.string.settings_api_description),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(top = 8.dp, bottom = 16.dp)
@@ -83,11 +85,11 @@ fun ApiSettingsScreen(onBack: () -> Unit, viewModel: ApiSettingsViewModel = hilt
                     onClick = viewModel::save,
                     enabled = clientId.isNotBlank() && clientSecret.isNotBlank()
                 ) {
-                    Text("Save")
+                    Text(stringResource(id = R.string.settings_api_save))
                 }
                 if (justSaved) {
                     Icon(Icons.Filled.CheckCircle, contentDescription = null, tint = Color(0xFF4CAF50))
-                    Text("Saved", color = Color(0xFF4CAF50), style = MaterialTheme.typography.bodyMedium)
+                    Text(stringResource(id = R.string.settings_api_saved), color = Color(0xFF4CAF50), style = MaterialTheme.typography.bodyMedium)
                 }
             }
         }
