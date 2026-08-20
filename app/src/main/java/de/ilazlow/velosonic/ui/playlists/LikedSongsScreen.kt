@@ -47,6 +47,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -54,6 +55,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.media3.exoplayer.offline.Download
+import de.ilazlow.velosonic.R
 import de.ilazlow.velosonic.data.datastore.LikedSongsSortOrder
 import de.ilazlow.velosonic.data.db.TrackEntity
 import de.ilazlow.velosonic.domain.goToArtistTarget
@@ -63,11 +65,11 @@ import de.ilazlow.velosonic.ui.share.ShareSheet
 import de.ilazlow.velosonic.ui.share.ShareTarget
 
 private val LikedSongsSortOrder.label: String
-    get() = when (this) {
-        LikedSongsSortOrder.DATE_LIKED -> "Date Liked"
-        LikedSongsSortOrder.TITLE -> "Title"
-        LikedSongsSortOrder.ARTIST -> "Artist"
-        LikedSongsSortOrder.DURATION -> "Duration"
+    @Composable get() = when (this) {
+        LikedSongsSortOrder.DATE_LIKED -> stringResource(R.string.liked_songs_sort_date_liked)
+        LikedSongsSortOrder.TITLE -> stringResource(R.string.liked_songs_sort_title)
+        LikedSongsSortOrder.ARTIST -> stringResource(R.string.liked_songs_sort_artist)
+        LikedSongsSortOrder.DURATION -> stringResource(R.string.liked_songs_sort_duration)
     }
 
 /**
@@ -112,7 +114,7 @@ fun LikedSongsScreen(
                 Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
             }
             Text(
-                text = "Liked Songs",
+                text = stringResource(R.string.liked_songs_title),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold,
                 maxLines = 1,
@@ -129,7 +131,10 @@ fun LikedSongsScreen(
                 val includedCount = visibleServers.count { it.host !in settings.excludedHosts }
                 Box {
                     TextButton(onClick = { showFilterMenu = true }) {
-                        Text(if (includedCount == visibleServers.size) "All Servers" else "$includedCount/${visibleServers.size}")
+                        Text(
+                            if (includedCount == visibleServers.size) stringResource(R.string.liked_songs_all_servers)
+                            else stringResource(R.string.liked_songs_server_count_fraction, includedCount, visibleServers.size)
+                        )
                         Icon(Icons.Filled.ArrowDropDown, contentDescription = null)
                     }
                     DropdownMenu(expanded = showFilterMenu, onDismissRequest = { showFilterMenu = false }) {
@@ -151,7 +156,7 @@ fun LikedSongsScreen(
             }
             Box {
                 IconButton(onClick = { showSortMenu = true }) {
-                    Icon(Icons.Filled.MoreVert, contentDescription = "Sort")
+                    Icon(Icons.Filled.MoreVert, contentDescription = stringResource(R.string.liked_songs_sort_content_description))
                 }
                 DropdownMenu(expanded = showSortMenu, onDismissRequest = { showSortMenu = false }) {
                     LikedSongsSortOrder.entries.forEach { order ->
@@ -176,7 +181,7 @@ fun LikedSongsScreen(
         OutlinedTextField(
             value = searchText,
             onValueChange = { searchText = it },
-            placeholder = { Text("Search") },
+            placeholder = { Text(stringResource(R.string.liked_songs_search_placeholder)) },
             leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
             singleLine = true,
             modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp)
@@ -192,12 +197,12 @@ fun LikedSongsScreen(
                         modifier = Modifier.size(60.dp)
                     )
                     Text(
-                        text = "No Liked Songs",
+                        text = stringResource(R.string.liked_songs_empty_title),
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold
                     )
                     Text(
-                        text = "Tap the heart on any song to see it here.",
+                        text = stringResource(R.string.liked_songs_empty_subtitle),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         textAlign = TextAlign.Center
@@ -289,13 +294,13 @@ private fun LikedSongsHeroHeader(
             )
         }
         Text(
-            text = "Liked Songs",
+            text = stringResource(R.string.liked_songs_title),
             style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(top = 16.dp)
         )
         Text(
-            text = "$trackCount Songs",
+            text = stringResource(R.string.liked_songs_song_count, trackCount),
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(top = 4.dp)
@@ -321,7 +326,7 @@ private fun LikedSongsHeroHeader(
             ) {
                 Icon(Icons.Filled.PlayArrow, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimary)
                 Spacer(modifier = Modifier.width(8.dp))
-                Text(text = "Play", color = MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.SemiBold)
+                Text(text = stringResource(R.string.liked_songs_play), color = MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.SemiBold)
             }
             CircleActionButton(onClick = onDownload) {
                 Icon(Icons.Filled.FileDownload, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)

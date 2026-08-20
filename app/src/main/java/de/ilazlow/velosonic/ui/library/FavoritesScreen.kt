@@ -28,12 +28,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import de.ilazlow.velosonic.R
 import de.ilazlow.velosonic.data.db.AlbumEntity
 import de.ilazlow.velosonic.ui.common.AlbumGridItem
 import de.ilazlow.velosonic.ui.common.ArtistAvatar
@@ -62,14 +64,14 @@ fun FavoritesScreen(
 
     Column(modifier = Modifier.fillMaxSize()) {
         SettingsTopBar(
-            title = "Favorites",
+            title = stringResource(id = R.string.library_favorites_title),
             onBack = onBack,
             actions = {
                 IconButton(onClick = viewModel::refreshStarred, enabled = !isSyncing) {
                     if (isSyncing) {
                         CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
                     } else {
-                        Icon(Icons.Filled.Refresh, contentDescription = "Refresh")
+                        Icon(Icons.Filled.Refresh, contentDescription = stringResource(id = R.string.library_favorites_refresh_content_description))
                     }
                 }
             }
@@ -86,12 +88,12 @@ fun FavoritesScreen(
                         modifier = Modifier.size(60.dp)
                     )
                     Text(
-                        text = "No Favorites Yet",
+                        text = stringResource(id = R.string.library_favorites_empty_title),
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold
                     )
                     Text(
-                        text = "Star artists, albums, and songs to see them here.",
+                        text = stringResource(id = R.string.library_favorites_empty_message),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         textAlign = TextAlign.Center,
@@ -109,7 +111,7 @@ fun FavoritesScreen(
             if (artists.isNotEmpty()) {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Text(
-                        text = "Artists",
+                        text = stringResource(id = R.string.library_favorites_section_artists),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.padding(horizontal = 20.dp)
@@ -143,7 +145,7 @@ fun FavoritesScreen(
             if (albums.isNotEmpty()) {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Text(
-                        text = "Albums",
+                        text = stringResource(id = R.string.library_favorites_section_albums),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.padding(horizontal = 20.dp)
@@ -155,7 +157,7 @@ fun FavoritesScreen(
             if (songs.isNotEmpty()) {
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text(
-                        text = "Songs",
+                        text = stringResource(id = R.string.library_favorites_section_songs),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.padding(horizontal = 20.dp)

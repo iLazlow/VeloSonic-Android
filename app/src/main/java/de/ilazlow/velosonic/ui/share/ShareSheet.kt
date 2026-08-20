@@ -26,10 +26,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import de.ilazlow.velosonic.R
 import de.ilazlow.velosonic.ui.settings.SettingsSwitchRow
 
 /**
@@ -69,7 +71,7 @@ fun ShareSheet(
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
         Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp)) {
             Text(
-                text = "Share \"${target.title}\"",
+                text = stringResource(id = R.string.share_sheet_title, target.title),
                 style = MaterialTheme.typography.titleLarge,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
@@ -78,12 +80,12 @@ fun ShareSheet(
             OutlinedTextField(
                 value = description,
                 onValueChange = { description = it },
-                label = { Text("Description (optional)") },
+                label = { Text(stringResource(id = R.string.share_sheet_description_optional)) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth().padding(top = 20.dp)
             )
 
-            Text(text = "Expires", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 20.dp, bottom = 8.dp))
+            Text(text = stringResource(id = R.string.share_sheet_expires_label), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 20.dp, bottom = 8.dp))
             SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
                 ShareExpiryOption.entries.forEachIndexed { index, option ->
                     SegmentedButton(
@@ -91,20 +93,20 @@ fun ShareSheet(
                         onClick = { expiry = option },
                         shape = SegmentedButtonDefaults.itemShape(index = index, count = ShareExpiryOption.entries.size)
                     ) {
-                        Text(option.label)
+                        Text(stringResource(id = option.labelRes))
                     }
                 }
             }
 
             SettingsSwitchRow(
-                title = "Allow Downloads",
+                title = stringResource(id = R.string.share_sheet_allow_downloads),
                 checked = downloadAllowed,
                 onCheckedChange = { downloadAllowed = it }
             )
 
             if (state is ShareUiState.Error) {
                 Text(
-                    text = "Couldn't create the share link. Check your connection and try again.",
+                    text = stringResource(id = R.string.share_sheet_create_error),
                     color = MaterialTheme.colorScheme.error,
                     style = MaterialTheme.typography.bodySmall,
                     modifier = Modifier.padding(top = 8.dp)
@@ -120,7 +122,7 @@ fun ShareSheet(
                     if (state is ShareUiState.Creating) {
                         CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
                     } else {
-                        Text("Create Share Link")
+                        Text(stringResource(id = R.string.share_sheet_create_button))
                     }
                 }
             }

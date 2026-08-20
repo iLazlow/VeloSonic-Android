@@ -43,21 +43,23 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import de.ilazlow.velosonic.R
 import de.ilazlow.velosonic.data.db.AlbumEntity
 import de.ilazlow.velosonic.data.db.PlaylistEntity
 import de.ilazlow.velosonic.data.db.TrackEntity
 import de.ilazlow.velosonic.ui.common.CoverArtTile
 
-private enum class DownloadCategory(val title: String) {
-    PLAYLISTS("Downloaded Playlists"),
-    ALBUMS("Downloaded Albums"),
-    SONGS("Downloaded Songs"),
-    ARTISTS("Downloaded Artists")
+private enum class DownloadCategory(val titleRes: Int) {
+    PLAYLISTS(R.string.downloads_category_playlists_title),
+    ALBUMS(R.string.downloads_category_albums_title),
+    SONGS(R.string.downloads_category_songs_title),
+    ARTISTS(R.string.downloads_category_artists_title)
 }
 
 /** Mirrors LibraryDownloadsView.swift's hub-of-4-categories shape (Playlists/Albums/Songs/
@@ -91,7 +93,7 @@ fun DownloadsScreen(
                 Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
             }
             Text(
-                text = selected?.title ?: "Downloads",
+                text = selected?.let { stringResource(id = it.titleRes) } ?: stringResource(id = R.string.downloads_title),
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(start = 4.dp)
@@ -100,7 +102,7 @@ fun DownloadsScreen(
             IconButton(onClick = { showQueue = true }) {
                 Icon(
                     Icons.Filled.Downloading,
-                    contentDescription = "Download Queue",
+                    contentDescription = stringResource(id = R.string.downloads_queue_content_description),
                     tint = if (hasActiveDownloads) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
@@ -112,7 +114,7 @@ fun DownloadsScreen(
                     DownloadCategoryRow(
                         icon = Icons.AutoMirrored.Filled.QueueMusic,
                         color = Color(0xFF9C6ADE),
-                        label = "Playlists",
+                        label = stringResource(id = R.string.downloads_label_playlists),
                         count = state.playlists.size,
                         onClick = { selected = DownloadCategory.PLAYLISTS }
                     )
@@ -121,7 +123,7 @@ fun DownloadsScreen(
                     DownloadCategoryRow(
                         icon = Icons.Filled.Album,
                         color = Color(0xFFE08A3E),
-                        label = "Albums",
+                        label = stringResource(id = R.string.downloads_label_albums),
                         count = state.albums.size,
                         onClick = { selected = DownloadCategory.ALBUMS }
                     )
@@ -130,7 +132,7 @@ fun DownloadsScreen(
                     DownloadCategoryRow(
                         icon = Icons.Filled.MusicNote,
                         color = Color(0xFFE0568A),
-                        label = "Songs",
+                        label = stringResource(id = R.string.downloads_label_songs),
                         count = state.songs.size,
                         onClick = { selected = DownloadCategory.SONGS }
                     )
@@ -139,7 +141,7 @@ fun DownloadsScreen(
                     DownloadCategoryRow(
                         icon = Icons.Filled.Mic,
                         color = Color(0xFF3EA0A0),
-                        label = "Artists",
+                        label = stringResource(id = R.string.downloads_label_artists),
                         count = state.artists.size,
                         onClick = { selected = DownloadCategory.ARTISTS }
                     )
@@ -191,7 +193,7 @@ private fun DownloadCategoryRow(icon: androidx.compose.ui.graphics.vector.ImageV
 
 @Composable
 private fun DownloadedPlaylistsList(playlists: List<PlaylistEntity>, coverArtUrl: (String, String?, Int) -> String?, onClick: (String) -> Unit) {
-    EmptyAwareList(playlists.isEmpty(), "No downloaded playlists yet.") {
+    EmptyAwareList(playlists.isEmpty(), stringResource(id = R.string.downloads_empty_playlists)) {
         items(playlists, key = { it.id }) { playlist ->
             Row(
                 modifier = Modifier.fillMaxWidth().clickable { onClick(playlist.id) }.padding(horizontal = 20.dp, vertical = 8.dp),
@@ -201,14 +203,14 @@ private fun DownloadedPlaylistsList(playlists: List<PlaylistEntity>, coverArtUrl
                 CoverArtTile(url = coverArtUrl(playlist.serverHost, playlist.coverArt, 150), contentDescription = playlist.name, modifier = Modifier.size(50.dp).clip(RoundedCornerShape(6.dp)))
                 Column(modifier = Modifier.weight(1f)) {
                     Text(text = playlist.name, style = MaterialTheme.typography.bodyLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    Text(text = "${playlist.songCount} Songs", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(text = stringResource(id = R.string.downloads_playlist_song_count, playlist.songCount), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         }
     }
 }
 
-private enum class AlbumSizeFilter(val label: String) { ALBUMS("Albums"), SINGLES("Singles") }
+private enum class AlbumSizeFilter(val labelRes: Int) { ALBUMS(R.string.downloads_album_filter_albums), SINGLES(R.string.downloads_album_filter_singles) }
 
 /** iOS's `AlbumSizeFilter.singleTrackThreshold` — a release with 2 or fewer tracks counts as a
  *  single, not an album; an unknown/zero track count (`songCount == null`) is treated as an album. */
@@ -229,11 +231,11 @@ private fun DownloadedAlbumsList(albums: List<AlbumEntity>, coverArtUrl: (String
                     onClick = { filter = option },
                     shape = SegmentedButtonDefaults.itemShape(index = index, count = AlbumSizeFilter.entries.size)
                 ) {
-                    Text(option.label)
+                    Text(stringResource(id = option.labelRes))
                 }
             }
         }
-        val emptyMessage = if (filter == AlbumSizeFilter.SINGLES) "No downloaded singles yet." else "No downloaded albums yet."
+        val emptyMessage = if (filter == AlbumSizeFilter.SINGLES) stringResource(id = R.string.downloads_empty_singles) else stringResource(id = R.string.downloads_empty_albums)
         EmptyAwareList(filtered.isEmpty(), emptyMessage) {
             items(filtered, key = { it.id }) { album ->
                 Row(
@@ -259,7 +261,7 @@ private fun DownloadedSongsList(
     onRemove: (String) -> Unit,
     onClick: (TrackEntity) -> Unit
 ) {
-    EmptyAwareList(songs.isEmpty(), "No individually downloaded songs yet.") {
+    EmptyAwareList(songs.isEmpty(), stringResource(id = R.string.downloads_empty_songs)) {
         items(songs, key = { it.id }) { track ->
             Row(
                 modifier = Modifier.fillMaxWidth().clickable { onClick(track) }.padding(horizontal = 20.dp, vertical = 8.dp),
@@ -281,7 +283,7 @@ private fun DownloadedSongsList(
 
 @Composable
 private fun DownloadedArtistsList(artists: List<DownloadedArtistGroup>, onArtistClick: (id: String, name: String) -> Unit) {
-    EmptyAwareList(artists.isEmpty(), "No downloaded artists yet.") {
+    EmptyAwareList(artists.isEmpty(), stringResource(id = R.string.downloads_empty_artists)) {
         items(artists, key = { it.routeId ?: it.name }) { group ->
             Row(
                 modifier = Modifier
@@ -291,7 +293,7 @@ private fun DownloadedArtistsList(artists: List<DownloadedArtistGroup>, onArtist
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(text = group.name, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
-                Text(text = "${group.count} songs", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(text = stringResource(id = R.string.downloads_artist_song_count, group.count), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
     }

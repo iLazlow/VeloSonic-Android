@@ -19,6 +19,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.stringResource
+import de.ilazlow.velosonic.R
 
 /**
  * Direct port of `TrackRow.swift`'s "..." menu — the single canonical track-row overflow menu
@@ -52,7 +54,7 @@ fun TrackOverflowMenu(
 ) {
     DropdownMenu(expanded = expanded, onDismissRequest = onDismissRequest) {
         DropdownMenuItem(
-            text = { Text(if (isStarred) "Unlike" else "Like") },
+            text = { Text(if (isStarred) stringResource(id = R.string.track_overflow_menu_unlike) else stringResource(id = R.string.track_overflow_menu_like)) },
             leadingIcon = {
                 Icon(
                     imageVector = if (isStarred) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
@@ -63,55 +65,55 @@ fun TrackOverflowMenu(
             onClick = { onDismissRequest(); onToggleStar() }
         )
         DropdownMenuItem(
-            text = { Text("Play Next") },
+            text = { Text(stringResource(id = R.string.track_overflow_menu_play_next)) },
             leadingIcon = { Icon(Icons.AutoMirrored.Filled.PlaylistPlay, contentDescription = null) },
             onClick = { onDismissRequest(); onPlayNext() }
         )
         DropdownMenuItem(
-            text = { Text("Instant Mix") },
+            text = { Text(stringResource(id = R.string.track_overflow_menu_instant_mix)) },
             leadingIcon = { Icon(Icons.Filled.AutoAwesome, contentDescription = null) },
             enabled = canReachNetwork,
             onClick = { onDismissRequest(); onInstantMix() }
         )
         if (onGoToArtist != null) {
             DropdownMenuItem(
-                text = { Text("Go to Artist") },
+                text = { Text(stringResource(id = R.string.track_overflow_menu_go_to_artist)) },
                 leadingIcon = { Icon(Icons.Filled.Mic, contentDescription = null) },
                 onClick = { onDismissRequest(); onGoToArtist() }
             )
         }
         if (onGoToAlbum != null) {
             DropdownMenuItem(
-                text = { Text("Go to Album") },
+                text = { Text(stringResource(id = R.string.track_overflow_menu_go_to_album)) },
                 leadingIcon = { Icon(Icons.Filled.Album, contentDescription = null) },
                 onClick = { onDismissRequest(); onGoToAlbum() }
             )
         }
         DropdownMenuItem(
-            text = { Text("Add to Playlist") },
+            text = { Text(stringResource(id = R.string.track_overflow_menu_add_to_playlist)) },
             leadingIcon = { Icon(Icons.AutoMirrored.Filled.PlaylistAdd, contentDescription = null) },
             enabled = canReachNetwork,
             onClick = { onDismissRequest(); onAddToPlaylist() }
         )
         DropdownMenuItem(
-            text = { Text("Share Song") },
+            text = { Text(stringResource(id = R.string.track_overflow_menu_share_song)) },
             leadingIcon = { Icon(Icons.Filled.Share, contentDescription = null) },
             onClick = { onDismissRequest(); onShare() }
         )
         DropdownMenuItem(
-            text = { Text("Show Info") },
+            text = { Text(stringResource(id = R.string.track_overflow_menu_show_info)) },
             leadingIcon = { Icon(Icons.Filled.Info, contentDescription = null) },
             onClick = { onDismissRequest(); onShowInfo() }
         )
         if (isDownloaded) {
             DropdownMenuItem(
-                text = { Text("Remove Download", color = MaterialTheme.colorScheme.error) },
+                text = { Text(stringResource(id = R.string.track_overflow_menu_remove_download), color = MaterialTheme.colorScheme.error) },
                 leadingIcon = { Icon(Icons.Filled.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
                 onClick = { onDismissRequest(); onToggleDownload() }
             )
         } else if (canReachNetwork) {
             DropdownMenuItem(
-                text = { Text("Download") },
+                text = { Text(stringResource(id = R.string.track_overflow_menu_download)) },
                 leadingIcon = { Icon(Icons.Filled.FileDownload, contentDescription = null) },
                 onClick = { onDismissRequest(); onToggleDownload() }
             )
@@ -119,7 +121,7 @@ fun TrackOverflowMenu(
         if (onRemoveFromPlaylist != null) {
             HorizontalDivider()
             DropdownMenuItem(
-                text = { Text("Delete", color = MaterialTheme.colorScheme.error) },
+                text = { Text(stringResource(id = R.string.track_overflow_menu_delete), color = MaterialTheme.colorScheme.error) },
                 leadingIcon = { Icon(Icons.Filled.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
                 onClick = { onDismissRequest(); onRemoveFromPlaylist() }
             )

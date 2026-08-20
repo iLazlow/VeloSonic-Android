@@ -152,7 +152,7 @@ fun LoginScreen(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("Debug Log")
+                        Text(stringResource(id = R.string.login_debug_log))
                         Icon(
                             imageVector = if (showDebugLog) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
                             contentDescription = null,
@@ -199,11 +199,11 @@ fun LoginScreen(
                 enabled = backupState !is BackupUiState.Working,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Restore from Backup")
+                Text(stringResource(id = R.string.login_restore_from_backup))
             }
             if (backupState is BackupUiState.Error) {
                 Text(
-                    text = "Something went wrong. Make sure you picked a valid VeloSonic backup file.",
+                    text = stringResource(id = R.string.login_restore_error),
                     color = MaterialTheme.colorScheme.error,
                     style = MaterialTheme.typography.bodySmall
                 )
@@ -214,9 +214,9 @@ fun LoginScreen(
     if (backupState is BackupUiState.RestoreStaged) {
         AlertDialog(
             onDismissRequest = {},
-            title = { Text("Restart Required") },
-            text = { Text("Close and reopen the app to finish restoring your backup.") },
-            confirmButton = { TextButton(onClick = backupViewModel::reset) { Text("OK") } }
+            title = { Text(stringResource(id = R.string.login_restart_required_title)) },
+            text = { Text(stringResource(id = R.string.login_restart_required_message)) },
+            confirmButton = { TextButton(onClick = backupViewModel::reset) { Text(stringResource(id = R.string.login_restart_required_confirm)) } }
         )
     }
 }

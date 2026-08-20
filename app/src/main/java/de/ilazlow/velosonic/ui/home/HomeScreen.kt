@@ -143,7 +143,7 @@ fun HomeScreen(
                 IconButton(onClick = { showDownloadQueue = true }) {
                     Icon(
                         Icons.Filled.Downloading,
-                        contentDescription = "Downloads",
+                        contentDescription = stringResource(id = R.string.home_downloads_content_description),
                         tint = if (activeDownloadCount > 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
@@ -155,7 +155,7 @@ fun HomeScreen(
                     if (isFetchingQueue) {
                         CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
                     } else {
-                        Icon(Icons.Filled.Refresh, contentDescription = "Load queue from server", tint = MaterialTheme.colorScheme.primary)
+                        Icon(Icons.Filled.Refresh, contentDescription = stringResource(id = R.string.home_load_queue_content_description), tint = MaterialTheme.colorScheme.primary)
                     }
                 }
             }

@@ -57,6 +57,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -65,6 +66,7 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.media3.exoplayer.offline.Download
+import de.ilazlow.velosonic.R
 import de.ilazlow.velosonic.data.db.PlaylistEntity
 import de.ilazlow.velosonic.data.db.PlaylistSortField
 import de.ilazlow.velosonic.data.db.TrackEntity
@@ -150,17 +152,17 @@ fun PlaylistDetailScreen(
                     Icon(Icons.Filled.MoreVert, contentDescription = null)
                 }
                 DropdownMenu(expanded = showOverflowMenu, onDismissRequest = { showOverflowMenu = false }) {
-                    DropdownMenuItem(text = { Text("Edit") }, onClick = { showOverflowMenu = false; showEditSheet = true })
+                    DropdownMenuItem(text = { Text(stringResource(R.string.playlist_detail_edit)) }, onClick = { showOverflowMenu = false; showEditSheet = true })
                     HorizontalDivider()
-                    SortMenuItem("Sort: Custom", PlaylistSortField.CUSTOM, playlist?.sortField, viewModel::setSortField) { showOverflowMenu = false }
-                    SortMenuItem("Sort: Title", PlaylistSortField.TITLE, playlist?.sortField, viewModel::setSortField) { showOverflowMenu = false }
-                    SortMenuItem("Sort: Duration", PlaylistSortField.DURATION, playlist?.sortField, viewModel::setSortField) { showOverflowMenu = false }
+                    SortMenuItem(stringResource(R.string.playlist_detail_sort_custom), PlaylistSortField.CUSTOM, playlist?.sortField, viewModel::setSortField) { showOverflowMenu = false }
+                    SortMenuItem(stringResource(R.string.playlist_detail_sort_title), PlaylistSortField.TITLE, playlist?.sortField, viewModel::setSortField) { showOverflowMenu = false }
+                    SortMenuItem(stringResource(R.string.playlist_detail_sort_duration), PlaylistSortField.DURATION, playlist?.sortField, viewModel::setSortField) { showOverflowMenu = false }
                     DropdownMenuItem(
-                        text = { Text(if (playlist?.isSortReversed == true) "✓ Reverse Order" else "Reverse Order") },
+                        text = { Text(if (playlist?.isSortReversed == true) "✓ " + stringResource(R.string.playlist_detail_reverse_order) else stringResource(R.string.playlist_detail_reverse_order)) },
                         onClick = { showOverflowMenu = false; viewModel.toggleSortReversed() }
                     )
                     DropdownMenuItem(
-                        text = { Text("Share") },
+                        text = { Text(stringResource(R.string.playlist_detail_share)) },
                         onClick = {
                             showOverflowMenu = false
                             playlist?.let { shareTarget = ShareTarget(it.serverHost, it.subsonicId, it.name) }
@@ -169,12 +171,12 @@ fun PlaylistDetailScreen(
                     HorizontalDivider()
                     if (isFullyDownloaded) {
                         DropdownMenuItem(
-                            text = { Text("Remove Downloads", color = MaterialTheme.colorScheme.error) },
+                            text = { Text(stringResource(R.string.playlist_detail_remove_downloads), color = MaterialTheme.colorScheme.error) },
                             onClick = { showOverflowMenu = false; viewModel.removeAllDownloads() }
                         )
                     }
                     DropdownMenuItem(
-                        text = { Text("Delete", color = MaterialTheme.colorScheme.error) },
+                        text = { Text(stringResource(R.string.playlist_detail_delete), color = MaterialTheme.colorScheme.error) },
                         onClick = { showOverflowMenu = false; showDeleteDialog = true }
                     )
                 }
@@ -200,7 +202,7 @@ fun PlaylistDetailScreen(
                     OutlinedTextField(
                         value = searchText,
                         onValueChange = { searchText = it },
-                        placeholder = { Text("Search") },
+                        placeholder = { Text(stringResource(R.string.playlist_detail_search_placeholder)) },
                         leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp)
@@ -234,7 +236,7 @@ fun PlaylistDetailScreen(
                 if (tracks.isEmpty()) {
                     item {
                         Text(
-                            text = "No tracks in this playlist yet.",
+                            text = stringResource(R.string.playlist_detail_empty_tracks),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.fillMaxWidth().padding(32.dp),
@@ -282,15 +284,15 @@ fun PlaylistDetailScreen(
     if (showDeleteDialog) {
         AlertDialog(
             onDismissRequest = { showDeleteDialog = false },
-            title = { Text("Delete \"${playlist?.name.orEmpty()}\"?") },
-            text = { Text("This can't be undone.") },
+            title = { Text(stringResource(R.string.playlist_detail_delete_dialog_title, playlist?.name.orEmpty())) },
+            text = { Text(stringResource(R.string.playlist_detail_delete_dialog_text)) },
             confirmButton = {
                 TextButton(onClick = { showDeleteDialog = false; viewModel.delete(onDeleted = onBack) }) {
-                    Text("Delete", color = MaterialTheme.colorScheme.error)
+                    Text(stringResource(R.string.playlist_detail_delete_confirm), color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showDeleteDialog = false }) { Text("Cancel") }
+                TextButton(onClick = { showDeleteDialog = false }) { Text(stringResource(R.string.playlist_detail_cancel)) }
             }
         )
     }
@@ -335,7 +337,7 @@ private fun JumpToCurrentSongButton(visible: Boolean, onClick: () -> Unit, modif
             modifier = Modifier.size(46.dp)
         ) {
             Box(contentAlignment = Alignment.Center) {
-                Icon(Icons.Filled.GpsFixed, contentDescription = "Jump to current song", tint = MaterialTheme.colorScheme.onSurface)
+                Icon(Icons.Filled.GpsFixed, contentDescription = stringResource(R.string.playlist_detail_jump_to_current_song), tint = MaterialTheme.colorScheme.onSurface)
             }
         }
     }
@@ -391,14 +393,20 @@ private fun PlaylistHeader(
             modifier = Modifier.padding(top = 16.dp, start = 24.dp, end = 24.dp)
         )
         Text(
-            text = playlist?.owner ?: "System",
+            text = playlist?.owner ?: stringResource(R.string.playlist_detail_owner_fallback),
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(top = 2.dp)
         )
         if (playlist != null) {
+            val durationHourMinFormat = stringResource(R.string.playlist_detail_duration_hr_min)
+            val durationMinOnlyFormat = stringResource(R.string.playlist_detail_duration_min_only)
             Text(
-                text = "${playlist.songCount} Songs • ${formatPlaylistHeaderDuration(playlist.duration)}",
+                text = stringResource(
+                    R.string.playlist_detail_song_count_duration,
+                    playlist.songCount,
+                    formatPlaylistHeaderDuration(playlist.duration, durationHourMinFormat, durationMinOnlyFormat)
+                ),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(top = 4.dp)
@@ -425,7 +433,7 @@ private fun PlaylistHeader(
             ) {
                 Icon(Icons.Filled.PlayArrow, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimary)
                 Spacer(modifier = Modifier.width(8.dp))
-                Text(text = "Play", color = MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.SemiBold)
+                Text(text = stringResource(R.string.playlist_detail_play), color = MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.SemiBold)
             }
             CircleActionButton(onClick = if (isFullyDownloaded) onRemoveDownloads else onDownload) {
                 Icon(
@@ -562,9 +570,9 @@ private fun formatTrackDuration(totalSeconds: Int): String {
     return "%d:%02d".format(minutes, seconds)
 }
 
-private fun formatPlaylistHeaderDuration(totalSeconds: Int): String {
+private fun formatPlaylistHeaderDuration(totalSeconds: Int, hourMinFormat: String, minOnlyFormat: String): String {
     val totalMinutes = (totalSeconds / 60).coerceAtLeast(if (totalSeconds > 0) 1 else 0)
     val hours = totalMinutes / 60
     val minutes = totalMinutes % 60
-    return if (hours > 0) "$hours hr $minutes min" else "$minutes min"
+    return if (hours > 0) hourMinFormat.format(hours, minutes) else minOnlyFormat.format(minutes)
 }

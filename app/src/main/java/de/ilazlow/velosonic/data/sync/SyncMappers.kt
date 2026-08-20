@@ -6,6 +6,7 @@ import de.ilazlow.velosonic.data.db.RadioStationEntity
 import de.ilazlow.velosonic.data.db.TrackEntity
 import de.ilazlow.velosonic.data.network.dto.AlbumDetailDto
 import de.ilazlow.velosonic.data.network.dto.AlbumDto
+import de.ilazlow.velosonic.data.network.dto.ArtistDetailDto
 import de.ilazlow.velosonic.data.network.dto.RadioStationDto
 import de.ilazlow.velosonic.data.network.dto.SubsonicArtistDto
 import de.ilazlow.velosonic.data.network.dto.TrackDto
@@ -16,6 +17,17 @@ import java.time.format.DateTimeFormatter
 
 /** "{serverHost}_{subsonicId}" — mirrors SyncManager.compositeId, used as every entity's PK. */
 fun compositeId(serverHost: String, subsonicId: String): String = "${serverHost}_$subsonicId"
+
+/** Reverse of [compositeId] against the finite set of currently configured server hosts — a
+ *  composite id can't be split on its own ("_" isn't guaranteed unique to the join point), but
+ *  checking which configured host is an exact prefix is unambiguous in practice. Needed when a
+ *  screen navigates to a composite id for an entity that isn't synced into Room yet (e.g. tapping
+ *  a live `search3` result for something never locally synced) and has to recover which
+ *  server/raw-subsonic-id to fetch fresh from. */
+fun resolveCompositeId(compositeId: String, hosts: List<String>): Pair<String, String>? {
+    val host = hosts.firstOrNull { compositeId.startsWith("${it}_") } ?: return null
+    return host to compositeId.removePrefix("${host}_")
+}
 
 /** [AlbumEntity.created] is sorted with a plain SQL `ORDER BY created DESC` (see
  *  `AlbumDao.observeNewest`) rather than a parsed-date comparison, which only produces
@@ -41,6 +53,18 @@ fun SubsonicArtistDto.toEntity(host: String): ArtistEntity = ArtistEntity(
     subsonicId = id,
     serverHost = host,
     name = name
+)
+
+/** Builds a standalone [ArtistEntity] straight from `getArtist`'s full detail response — used
+ *  when a screen navigates to an artist that isn't synced into Room at all yet (see
+ *  [resolveCompositeId]'s doc comment), where there's no existing lightweight row to build on top
+ *  of the way [SubsonicArtistDto.toEntity] normally would. */
+fun ArtistDetailDto.toFreshEntity(host: String): ArtistEntity = ArtistEntity(
+    id = compositeId(host, id),
+    subsonicId = id,
+    serverHost = host,
+    name = name,
+    isStarred = !starred.isNullOrEmpty()
 )
 
 /** Base fields only, from the lightweight Album returned by getArtist/getAlbumList2 — the
@@ -80,6 +104,40 @@ fun AlbumEntity.mergedWithDetail(detail: AlbumDetailDto): AlbumEntity = copy(
     releaseTypes = detail.releaseTypes,
     genresList = detail.genres?.map { it.name },
     artistsList = detail.artists?.map { it.name }
+)
+
+/** Builds a standalone [AlbumEntity] straight from `getAlbum`'s full detail response — the
+ *  not-yet-synced counterpart to [mergedWithDetail], used when there's no existing lightweight row
+ *  to merge the detail fetch onto (see [resolveCompositeId]'s doc comment: navigating to an album
+ *  discovered via live `search3` that was never locally synced). */
+fun AlbumDetailDto.toFreshEntity(host: String): AlbumEntity = AlbumEntity(
+    id = compositeId(host, id),
+    subsonicId = id,
+    serverHost = host,
+    name = name,
+    artistName = artist ?: displayArtist ?: "",
+    artistId = artistId,
+    artistCompositeId = artistId?.let { compositeId(host, it) },
+    coverArt = coverArt,
+    genre = genre,
+    year = year,
+    date = date,
+    isStarred = !starred.isNullOrEmpty(),
+    sortName = sortName,
+    musicBrainzId = musicBrainzId,
+    displayArtist = displayArtist,
+    played = normalizeCreatedDate(played),
+    playCount = playCount,
+    created = normalizeCreatedDate(created),
+    userRating = userRating,
+    starredAt = starred,
+    songCount = songCount ?: song?.size,
+    albumDuration = duration ?: song?.sumOf { it.duration },
+    compilation = compilation,
+    moods = moods,
+    releaseTypes = releaseTypes,
+    genresList = genres?.map { it.name },
+    artistsList = artists?.map { it.name }
 )
 
 /**

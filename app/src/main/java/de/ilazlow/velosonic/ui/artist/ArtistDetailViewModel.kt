@@ -19,6 +19,9 @@ import de.ilazlow.velosonic.data.network.CoverArtUrlResolver
 import de.ilazlow.velosonic.data.network.NetworkAvailability
 import de.ilazlow.velosonic.data.network.dto.SimilarArtistDto
 import de.ilazlow.velosonic.data.playback.PlaybackSubsonicClient
+import de.ilazlow.velosonic.data.sync.resolveCompositeId
+import de.ilazlow.velosonic.data.sync.toFreshEntity
+import de.ilazlow.velosonic.data.sync.toLightweightEntity
 import de.ilazlow.velosonic.data.sync.toStandaloneEntity
 import de.ilazlow.velosonic.playback.NowPlaying
 import de.ilazlow.velosonic.playback.PlaybackController
@@ -57,7 +60,15 @@ class ArtistDetailViewModel @Inject constructor(
     private val _artist = MutableStateFlow<ArtistEntity?>(null)
     val artist: StateFlow<ArtistEntity?> = _artist.asStateFlow()
 
-    val albums: StateFlow<List<AlbumEntity>> = libraryRepository.observeAlbumsByArtist(route.artistId)
+    /** Populated only when this artist isn't synced into Room at all yet (e.g. navigated to from
+     *  a live search3 result — see the init block's fallback) — [albums] prefers the Room-observed
+     *  list whenever it's non-empty, so this is superseded automatically the moment a background
+     *  sync actually picks the artist up. */
+    private val _networkFallbackAlbums = MutableStateFlow<List<AlbumEntity>>(emptyList())
+    val albums: StateFlow<List<AlbumEntity>> = combine(
+        libraryRepository.observeAlbumsByArtist(route.artistId),
+        _networkFallbackAlbums
+    ) { local, network -> local.ifEmpty { network } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     private val _topSongs = MutableStateFlow<List<TrackEntity>>(emptyList())
@@ -107,9 +118,20 @@ class ArtistDetailViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
-            val entity = libraryRepository.getArtistById(route.artistId)
+            // Not synced locally yet — e.g. navigated to from a live search3 result that was
+            // never part of a background sync. Resolve which server it came from against the
+            // composite id, then fetch fresh via getArtist instead of leaving the whole screen
+            // blank (matches the same "server as fallback" gap fixed for Album Detail).
+            val entity = libraryRepository.getArtistById(route.artistId) ?: run {
+                val hosts = coverArtUrlResolver.allConfigs().map { it.host }
+                val (fallbackHost, subsonicId) = resolveCompositeId(route.artistId, hosts) ?: return@launch
+                val config = artistSubsonicClient.configFor(fallbackHost) ?: return@launch
+                val detail = artistSubsonicClient.fetchArtist(config, subsonicId) ?: return@launch
+                _networkFallbackAlbums.value = detail.album.orEmpty().map { it.toLightweightEntity(fallbackHost) }
+                detail.toFreshEntity(fallbackHost)
+            }
             _artist.value = entity
-            val host = entity?.serverHost ?: return@launch
+            val host = entity.serverHost
 
             // Shown immediately, before any network call — mirrors iOS's `preTracks`. Without
             // this, opening an artist while offline (or just on a slow connection) left "Top

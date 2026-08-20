@@ -85,6 +85,7 @@ import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -97,6 +98,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.offline.Download as DownloadState
 import coil3.compose.AsyncImage
+import de.ilazlow.velosonic.R
 import de.ilazlow.velosonic.data.db.ArtistEntry
 import de.ilazlow.velosonic.data.db.RadioStationEntity
 import de.ilazlow.velosonic.data.db.TrackEntity
@@ -280,7 +282,7 @@ fun PlayerScreen(
                         val subtitle = if (nowPlaying.radioStreamTitle != null) {
                             station?.name.orEmpty()
                         } else {
-                            station?.homePageUrl?.takeIf { it.isNotBlank() } ?: "Live Stream"
+                            station?.homePageUrl?.takeIf { it.isNotBlank() } ?: stringResource(R.string.player_live_stream)
                         }
                         Text(
                             text = subtitle,
@@ -316,7 +318,7 @@ fun PlayerScreen(
                     ) {
                         Icon(
                             imageVector = Icons.Filled.Public,
-                            contentDescription = "Website",
+                            contentDescription = stringResource(R.string.player_website_content_description),
                             tint = Color.White.copy(alpha = if (homePageUrl != null) 0.7f else 0.25f)
                         )
                     }
@@ -387,16 +389,16 @@ fun PlayerScreen(
             ) {
                 Row(modifier = Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     Box(modifier = Modifier.size(6.dp).clip(CircleShape).background(Color(0xFFE53935)))
-                    Text(text = "LIVE", color = Color.White.copy(alpha = 0.8f), fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                    Text(text = stringResource(R.string.player_live_label), color = Color.White.copy(alpha = 0.8f), fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
                 }
                 if (nowPlaying.isBuffering) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                         CircularProgressIndicator(modifier = Modifier.size(12.dp), strokeWidth = 1.5.dp, color = Color.White.copy(alpha = 0.7f))
-                        Text(text = "Loading", color = Color.White.copy(alpha = 0.6f), fontSize = 12.sp)
+                        Text(text = stringResource(R.string.player_buffering_loading), color = Color.White.copy(alpha = 0.6f), fontSize = 12.sp)
                     }
                 }
                 Text(
-                    text = "∞",
+                    text = stringResource(R.string.player_infinite_duration),
                     color = Color.White.copy(alpha = 0.6f),
                     fontSize = 12.sp,
                     textAlign = TextAlign.End,
@@ -498,7 +500,7 @@ fun PlayerScreen(
                 if (track != null) {
                     Icon(
                         Icons.Filled.Share,
-                        contentDescription = "Share",
+                        contentDescription = stringResource(R.string.player_share_content_description),
                         tint = Color.White.copy(alpha = 0.7f),
                         modifier = Modifier.size(22.dp).clickable(onClick = { showShareSheet = true })
                     )
@@ -507,7 +509,7 @@ fun PlayerScreen(
                 }
                 Icon(
                     Icons.Filled.QueueMusic,
-                    contentDescription = "Up Next",
+                    contentDescription = stringResource(R.string.player_up_next_content_description),
                     tint = if (showQueue) Color.White else Color.White.copy(alpha = 0.5f),
                     modifier = Modifier.size(22.dp).clickable(onClick = { showQueue = true })
                 )
@@ -698,7 +700,7 @@ private fun MoreRadioStationsSection(
 ) {
     Column(modifier = Modifier.padding(top = 8.dp, bottom = 30.dp)) {
         Text(
-            text = "Weitere Radiosender",
+            text = stringResource(R.string.player_more_radio_stations),
             color = Color.White,
             fontSize = 20.sp,
             fontWeight = FontWeight.Bold,
@@ -735,7 +737,7 @@ private fun MoreRadioStationsSection(
                 Column(modifier = Modifier.weight(1f)) {
                     Text(text = station.name, color = Color.White, fontSize = 16.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     Text(
-                        text = station.homePageUrl?.takeIf { it.isNotBlank() } ?: "Live Stream",
+                        text = station.homePageUrl?.takeIf { it.isNotBlank() } ?: stringResource(R.string.player_live_stream),
                         color = Color.White.copy(alpha = 0.6f),
                         fontSize = 12.sp,
                         maxLines = 1,
@@ -802,7 +804,7 @@ private fun PlayerCompactHeader(
     ) {
         Icon(
             imageVector = Icons.Filled.KeyboardArrowDown,
-            contentDescription = "Close lyrics",
+            contentDescription = stringResource(R.string.player_close_lyrics_content_description),
             tint = Color.White.copy(alpha = 0.8f),
             modifier = Modifier.size(24.dp).clickable(onClick = onDismissLyrics)
         )
@@ -893,7 +895,7 @@ private fun SimilarSongsSection(
 ) {
     Column(modifier = Modifier.padding(top = 24.dp)) {
         Text(
-            text = "Similar Songs",
+            text = stringResource(R.string.player_similar_songs_title),
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold,
             color = Color.White,
@@ -938,14 +940,14 @@ private fun SimilarArtistsSection(
 ) {
     Column(modifier = Modifier.padding(top = 24.dp)) {
         Text(
-            text = "Similar Artists",
+            text = stringResource(R.string.player_similar_artists_title),
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold,
             color = Color.White,
             modifier = Modifier.padding(bottom = 12.dp)
         )
         if (artists.isEmpty()) {
-            Text(text = "No similar artists found", color = Color.White.copy(alpha = 0.6f), fontSize = 13.sp)
+            Text(text = stringResource(R.string.player_no_similar_artists_found), color = Color.White.copy(alpha = 0.6f), fontSize = 13.sp)
         } else {
             LazyRow(
                 contentPadding = PaddingValues(end = 32.dp),
@@ -997,21 +999,29 @@ private fun PlayerSongInfoCard(track: TrackEntity, onShowFileDetails: () -> Unit
             .padding(16.dp)
     ) {
         Text(
-            text = "Song Info",
+            text = stringResource(R.string.player_song_info_title),
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold,
             color = Color.White,
             modifier = Modifier.padding(bottom = 12.dp)
         )
+        val albumLabel = stringResource(R.string.player_song_info_album)
+        val artistLabel = stringResource(R.string.player_song_info_artist)
+        val albumArtistLabel = stringResource(R.string.player_song_info_album_artist)
+        val yearLabel = stringResource(R.string.player_song_info_year)
+        val genreLabel = stringResource(R.string.player_song_info_genre)
+        val formatLabelText = stringResource(R.string.player_song_info_format)
+        val playCountLabel = stringResource(R.string.player_song_info_play_count)
+        val commentLabel = stringResource(R.string.player_song_info_comment)
         val rows = listOfNotNull(
-            track.albumName?.takeIf(String::isNotEmpty)?.let { "Album" to it },
+            track.albumName?.takeIf(String::isNotEmpty)?.let { albumLabel to it },
             (track.displayAlbumArtist?.takeIf(String::isNotEmpty) ?: track.artistName.takeIf(String::isNotEmpty))
-                ?.let { (if (track.displayAlbumArtist.isNullOrEmpty()) "Artist" else "Album Artist") to it },
-            track.year?.let { "Year" to it.toString() },
-            track.genre?.takeIf(String::isNotEmpty)?.let { "Genre" to it },
-            formatQualityDetail(track)?.let { "Format" to it },
-            track.playCount?.takeIf { it > 0 }?.let { "Play Count" to it.toString() },
-            track.comment?.takeIf(String::isNotEmpty)?.let { "Comment" to it }
+                ?.let { (if (track.displayAlbumArtist.isNullOrEmpty()) artistLabel else albumArtistLabel) to it },
+            track.year?.let { yearLabel to it.toString() },
+            track.genre?.takeIf(String::isNotEmpty)?.let { genreLabel to it },
+            formatQualityDetail(track)?.let { formatLabelText to it },
+            track.playCount?.takeIf { it > 0 }?.let { playCountLabel to it.toString() },
+            track.comment?.takeIf(String::isNotEmpty)?.let { commentLabel to it }
         )
         rows.forEach { (label, value) ->
             Row(modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp)) {
@@ -1030,7 +1040,7 @@ private fun PlayerSongInfoCard(track: TrackEntity, onShowFileDetails: () -> Unit
         ) {
             Icon(Icons.Filled.Info, contentDescription = null, tint = Color.White.copy(alpha = 0.8f), modifier = Modifier.size(16.dp))
             Spacer(modifier = Modifier.width(6.dp))
-            Text(text = "File Details", color = Color.White.copy(alpha = 0.8f), fontSize = 13.sp)
+            Text(text = stringResource(R.string.player_file_details), color = Color.White.copy(alpha = 0.8f), fontSize = 13.sp)
         }
     }
 }
@@ -1073,9 +1083,9 @@ private fun PlayerArtistBioCard(
             Column(
                 modifier = if (onArtistClick != null) Modifier.clickable(onClick = onArtistClick) else Modifier
             ) {
-                Text(text = "About the Artist", color = Color.White.copy(alpha = 0.6f), fontSize = 12.sp)
+                Text(text = stringResource(R.string.player_about_the_artist), color = Color.White.copy(alpha = 0.6f), fontSize = 12.sp)
                 Text(
-                    text = artistName.ifEmpty { "Unknown Artist" },
+                    text = artistName.ifEmpty { stringResource(R.string.player_unknown_artist) },
                     color = Color.White,
                     fontSize = 18.sp,
                     fontWeight = FontWeight.SemiBold,
@@ -1087,7 +1097,8 @@ private fun PlayerArtistBioCard(
         val bioWords = biography?.split(" ")?.filter { it.isNotBlank() } ?: emptyList()
         val isTruncatable = bioWords.size > 80
         if (!biography.isNullOrEmpty()) {
-            val displayText = if (isTruncatable && !expanded) bioWords.take(80).joinToString(" ") + "…" else biography
+            val truncationEllipsis = stringResource(R.string.player_bio_truncation_ellipsis)
+            val displayText = if (isTruncatable && !expanded) bioWords.take(80).joinToString(" ") + truncationEllipsis else biography
             Text(
                 text = displayText,
                 color = Color.White.copy(alpha = 0.85f),
@@ -1097,7 +1108,7 @@ private fun PlayerArtistBioCard(
             )
             if (isTruncatable) {
                 Text(
-                    text = if (expanded) "Show Less" else "Show More",
+                    text = if (expanded) stringResource(R.string.player_show_less) else stringResource(R.string.player_show_more),
                     color = Color.White.copy(alpha = 0.55f),
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Medium,
@@ -1106,7 +1117,7 @@ private fun PlayerArtistBioCard(
             }
         } else {
             Text(
-                text = "No biography available",
+                text = stringResource(R.string.player_no_biography_available),
                 color = Color.White.copy(alpha = 0.5f),
                 fontSize = 14.sp,
                 modifier = Modifier.padding(top = 14.dp)
@@ -1153,7 +1164,7 @@ private fun ArtistRow(track: TrackEntity, onArtistClick: (ArtistEntry) -> Unit) 
     Row(modifier = Modifier.padding(top = 2.dp)) {
         entries.forEachIndexed { index, entry ->
             if (index > 0) {
-                Text(text = " • ", color = Color.White.copy(alpha = 0.7f), fontSize = 15.sp)
+                Text(text = stringResource(R.string.player_artist_separator), color = Color.White.copy(alpha = 0.7f), fontSize = 15.sp)
             }
             Text(
                 text = entry.name,
@@ -1184,8 +1195,9 @@ private fun PlayerOverflowMenu(
         if (entries.size == 1) {
             val entry = entries[0]
             if (entry.id.isNotEmpty()) {
+                val goToArtistLabel = stringResource(R.string.player_go_to_artist)
                 DropdownMenuItem(
-                    text = { Text("Go to Artist") },
+                    text = { Text(goToArtistLabel) },
                     onClick = { onDismiss(); onArtistClick(entry) }
                 )
             }
@@ -1200,25 +1212,29 @@ private fun PlayerOverflowMenu(
             }
         }
         if (track.albumCompositeId != null) {
+            val goToAlbumLabel = stringResource(R.string.player_go_to_album)
             DropdownMenuItem(
-                text = { Text("Go to Album") },
+                text = { Text(goToAlbumLabel) },
                 onClick = { onDismiss(); onAlbumClick() }
             )
         }
         HorizontalDivider()
+        val addToPlaylistLabel = stringResource(R.string.player_add_to_playlist)
         DropdownMenuItem(
-            text = { Text("Add to Playlist") },
+            text = { Text(addToPlaylistLabel) },
             leadingIcon = { Icon(Icons.Filled.PlaylistAdd, contentDescription = null) },
             onClick = { onDismiss(); onAddToPlaylist() }
         )
+        val showInfoLabel = stringResource(R.string.player_show_info)
         DropdownMenuItem(
-            text = { Text("Show Info") },
+            text = { Text(showInfoLabel) },
             leadingIcon = { Icon(Icons.Filled.Info, contentDescription = null) },
             onClick = { onDismiss(); onShowInfo() }
         )
         if (!isDownloaded) {
+            val downloadLabel = stringResource(R.string.player_download)
             DropdownMenuItem(
-                text = { Text("Download") },
+                text = { Text(downloadLabel) },
                 leadingIcon = { Icon(Icons.Filled.Download, contentDescription = null) },
                 onClick = { onDismiss(); onDownload() }
             )
@@ -1240,7 +1256,7 @@ private fun PlayerQualityPill(track: TrackEntity, isDownloaded: Boolean, isCache
     ) {
         if (isBuffering) {
             CircularProgressIndicator(modifier = Modifier.size(11.dp), strokeWidth = 1.5.dp, color = Color.White.copy(alpha = 0.7f))
-            Text(text = "Loading...", color = Color.White.copy(alpha = 0.7f), fontSize = 11.sp)
+            Text(text = stringResource(R.string.player_quality_loading), color = Color.White.copy(alpha = 0.7f), fontSize = 11.sp)
             return@Row
         }
         val prefix = trackStatusLabel(isDownloaded, isCached)
@@ -1250,12 +1266,22 @@ private fun PlayerQualityPill(track: TrackEntity, isDownloaded: Boolean, isCache
         // other than "Original" for a non-lossless file; revisit once that setting exists.
         val isLossless = suffix in LOSSLESS_SUFFIXES
         if (isLossless) {
-            Text(text = "$prefix • ${suffix?.uppercase() ?: "FLAC"} •", color = Color.White.copy(alpha = 0.7f), fontSize = 11.sp)
+            val flacFallback = stringResource(R.string.player_quality_flac_fallback)
+            Text(
+                text = stringResource(R.string.player_quality_lossless_line, prefix, suffix?.uppercase() ?: flacFallback),
+                color = Color.White.copy(alpha = 0.7f),
+                fontSize = 11.sp
+            )
             Icon(Icons.Filled.GraphicEq, contentDescription = null, tint = Color.White.copy(alpha = 0.7f), modifier = Modifier.size(11.dp))
-            Text(text = "Lossless", color = Color.White.copy(alpha = 0.7f), fontSize = 11.sp)
+            Text(text = stringResource(R.string.player_quality_lossless), color = Color.White.copy(alpha = 0.7f), fontSize = 11.sp)
         } else {
-            val formatLabel = (track.suffix ?: track.contentType)?.uppercase() ?: "—"
-            Text(text = "$prefix • $formatLabel • Original", color = Color.White.copy(alpha = 0.7f), fontSize = 11.sp)
+            val unknownFormat = stringResource(R.string.player_quality_unknown_format)
+            val formatLabel = (track.suffix ?: track.contentType)?.uppercase() ?: unknownFormat
+            Text(
+                text = stringResource(R.string.player_quality_original_line, prefix, formatLabel),
+                color = Color.White.copy(alpha = 0.7f),
+                fontSize = 11.sp
+            )
         }
     }
 }
@@ -1269,12 +1295,15 @@ private fun formatMs(ms: Long): String {
 
 /** Mirrors iOS's `Track.formatDetail()` — "{SUFFIX} • {bitrate} kbps • {bitDepth}-bit", each
  *  segment only included when actually known. */
+@Composable
 private fun formatQualityDetail(track: TrackEntity): String? {
     val suffix = track.suffix?.uppercase()?.takeIf(String::isNotEmpty) ?: return null
+    val kbpsFormat = stringResource(R.string.player_quality_kbps)
+    val bitDepthFormat = stringResource(R.string.player_quality_bit_depth)
     val parts = buildList {
         add(suffix)
-        track.bitRate?.takeIf { it > 0 }?.let { add("$it kbps") }
-        track.bitDepth?.takeIf { it > 0 }?.let { add("$it-bit") }
+        track.bitRate?.takeIf { it > 0 }?.let { add(String.format(kbpsFormat, it)) }
+        track.bitDepth?.takeIf { it > 0 }?.let { add(String.format(bitDepthFormat, it)) }
     }
     return parts.joinToString(" • ")
 }

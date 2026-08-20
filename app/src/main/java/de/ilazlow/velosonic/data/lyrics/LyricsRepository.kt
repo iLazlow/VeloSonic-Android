@@ -10,6 +10,9 @@ import de.ilazlow.velosonic.data.network.CoverArtUrlResolver
 import de.ilazlow.velosonic.data.network.LrcLibApi
 import de.ilazlow.velosonic.data.network.RadiantLyricsApi
 import de.ilazlow.velosonic.data.network.dto.RadiantSyllableDto
+import de.ilazlow.velosonic.data.network.dto.CueDto
+import de.ilazlow.velosonic.data.network.dto.StructuredLyricsDto
+import de.ilazlow.velosonic.data.network.dto.StructuredLyricsLineDto
 import de.ilazlow.velosonic.data.network.SubsonicApi
 import de.ilazlow.velosonic.data.network.SubsonicUrlBuilder
 import de.ilazlow.velosonic.domain.supportsOpenSubsonicExtensions
@@ -208,20 +211,81 @@ class LyricsRepository @Inject constructor(
         return if (earliest == -1) artist.trim() else artist.substring(0, earliest).trim()
     }
 
+    /** OpenSubsonic `songLyrics` extension (v1 line-synced + v2 word-level `cueLine`/`cue` timing,
+     *  see https://opensubsonic.netlify.app/docs/extensions/songlyrics/) — `enhanced=true` opts
+     *  into `cueLine` when the server supports v2; a v1-only server just ignores the unknown
+     *  param and returns its normal v1 shape (no `cueLine`, [wordsForLine] then returns null and
+     *  the player falls back to its synthesized per-character sweep, same as before this existed).
+     *  Prefers the `kind == "main"` entry when the server sent multiple (translation/pronunciation
+     *  layers), falling back to the first non-empty entry for a v1 response that has no `kind`. */
     private suspend fun fetchNavidrome(config: ServerConfigEntity, track: TrackEntity): LyricsContent? = try {
-        val dto = api.get(url(config, "getLyricsBySongId", mapOf("id" to track.subsonicId)))
-            .subsonicResponse?.lyricsList?.structuredLyrics
-            ?.firstOrNull { !it.line.isNullOrEmpty() }
-        dto?.let { structured ->
-            val lines = structured.line.orEmpty()
-            if (structured.synced) {
-                LyricsContent.Synced(lines.map { LyricLine(it.start ?: 0, it.value) }, LyricsSourceKind.NAVIDROME)
+        val entries = api.get(url(config, "getLyricsBySongId", mapOf("id" to track.subsonicId, "enhanced" to "true")))
+            .subsonicResponse?.lyricsList?.structuredLyrics.orEmpty()
+        val structured = entries.firstOrNull { it.kind == "main" && !it.line.isNullOrEmpty() }
+            ?: entries.firstOrNull { !it.line.isNullOrEmpty() }
+        structured?.let {
+            val lines = it.line.orEmpty()
+            if (it.synced) {
+                LyricsContent.Synced(
+                    lines.mapIndexed { index, line -> toLyricLine(index, line, it) },
+                    LyricsSourceKind.NAVIDROME
+                )
             } else {
-                LyricsContent.Plain(lines.joinToString("\n") { it.value }, LyricsSourceKind.NAVIDROME)
+                LyricsContent.Plain(lines.joinToString("\n") { line -> line.value }, LyricsSourceKind.NAVIDROME)
             }
         }
     } catch (e: Exception) {
         null
+    }
+
+    private fun toLyricLine(index: Int, line: StructuredLyricsLineDto, structured: StructuredLyricsDto): LyricLine =
+        LyricLine(startMs = line.start ?: 0, text = line.value, words = wordsForLine(index, structured))
+
+    /** `cueLine.index` references the [StructuredLyricsDto.line] entry it times. Multiple cueLines
+     *  can share an index for overlapping multi-vocal layers (lead + background/harmony sung at
+     *  the same time, not sequentially) — mixing them in would break the "words are chronologically
+     *  ordered" assumption the sweep/tap-to-seek both depend on, so only the `role == "main"` layer
+     *  (or the first cueLine when there's no agent metadata at all) is kept, same principle as
+     *  [fetchRadiant]'s background-vocal exclusion. */
+    private fun wordsForLine(index: Int, structured: StructuredLyricsDto): List<LyricWord>? {
+        val cueLines = structured.cueLine.orEmpty().filter { it.index == index }
+        if (cueLines.isEmpty()) return null
+        val agentsById = structured.agents.orEmpty().associateBy { it.id }
+        val chosen = cueLines.firstOrNull { agentsById[it.agentId]?.role == "main" } ?: cueLines.first()
+        val cues = chosen.cue.orEmpty()
+        if (cues.isEmpty()) return null
+        return cues.mapIndexed { i, cue ->
+            LyricWord(
+                text = sliceUtf8(chosen.value, cue.byteStart, cue.byteEnd),
+                startMs = cue.start,
+                durationMs = cueDurationMs(cue, cues.getOrNull(i + 1)?.start),
+                isBackground = false,
+                romanizedText = null
+            )
+        }
+    }
+
+    /** [CueDto.end] is optional (present on all cues in a cueLine or none, per spec) — when
+     *  missing, the next cue's start stands in for it, and the very last cue in a line falls back
+     *  to a short fixed duration since there's nothing to measure against. */
+    private fun cueDurationMs(cue: CueDto, nextCueStartMs: Int?): Int {
+        val end = cue.end
+        val duration = when {
+            end != null -> end - cue.start
+            nextCueStartMs != null -> nextCueStartMs - cue.start
+            else -> 200
+        }
+        return duration.coerceAtLeast(1)
+    }
+
+    /** [CueDto.byteStart]/[byteEnd] are 0-based inclusive offsets into the UTF-8 encoding of
+     *  [value], not char/codepoint indices — a JVM String is UTF-16, so this re-encodes to bytes,
+     *  slices, and decodes back rather than substring-ing [value] directly. */
+    private fun sliceUtf8(value: String, byteStart: Int, byteEnd: Int): String {
+        val bytes = value.toByteArray(Charsets.UTF_8)
+        val start = byteStart.coerceIn(0, bytes.size)
+        val end = (byteEnd + 1).coerceIn(start, bytes.size)
+        return String(bytes, start, end - start, Charsets.UTF_8)
     }
 
     /** lrclib's `/api/get` exact-matches whichever of `album_name`/`duration` are passed — and

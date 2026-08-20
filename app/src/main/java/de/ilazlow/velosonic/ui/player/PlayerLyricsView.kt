@@ -56,9 +56,11 @@ import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import de.ilazlow.velosonic.R
 import de.ilazlow.velosonic.data.lyrics.LyricLine
 import de.ilazlow.velosonic.data.lyrics.LyricWord
 import de.ilazlow.velosonic.data.lyrics.LyricsContent
@@ -161,7 +163,7 @@ private fun StatusBadges(
             RadiantBadgePill()
         } else {
             val (icon, label) = when (source) {
-                LyricsSourceKind.NAVIDROME -> Icons.Filled.Dns to "Navidrome"
+                LyricsSourceKind.NAVIDROME -> Icons.Filled.Dns to stringResource(id = R.string.player_lyrics_source_server)
                 LyricsSourceKind.LRCLIB -> Icons.Filled.LibraryMusic to "lrclib"
                 LyricsSourceKind.LOCAL -> Icons.Filled.CloudDownload to "Cached"
                 LyricsSourceKind.RADIANT -> Icons.Filled.AutoAwesome to "Radiant Lyrics"

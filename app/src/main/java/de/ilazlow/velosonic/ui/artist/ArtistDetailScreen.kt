@@ -57,6 +57,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -65,6 +66,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.media3.exoplayer.offline.Download
 import coil3.compose.AsyncImage
+import de.ilazlow.velosonic.R
 import de.ilazlow.velosonic.data.db.ServerConfigEntity
 import de.ilazlow.velosonic.data.db.TrackEntity
 import de.ilazlow.velosonic.data.network.dto.SimilarArtistDto
@@ -147,25 +149,25 @@ fun ArtistDetailScreen(
                 DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
                     if (isFullyDownloaded) {
                         DropdownMenuItem(
-                            text = { Text("Remove Downloads", color = MaterialTheme.colorScheme.error) },
+                            text = { Text(stringResource(id = R.string.artist_detail_remove_downloads), color = MaterialTheme.colorScheme.error) },
                             leadingIcon = { Icon(Icons.Filled.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
                             onClick = { showMenu = false; viewModel.removeArtistDownloads() }
                         )
                     } else {
                         DropdownMenuItem(
-                            text = { Text("Download Artist") },
+                            text = { Text(stringResource(id = R.string.artist_detail_download_artist)) },
                             leadingIcon = { Icon(Icons.Filled.FileDownload, contentDescription = null) },
                             onClick = { showMenu = false; viewModel.downloadArtist() }
                         )
                     }
                     DropdownMenuItem(
-                        text = { Text("Share") },
+                        text = { Text(stringResource(id = R.string.artist_detail_share)) },
                         leadingIcon = { Icon(Icons.Filled.Share, contentDescription = null) },
                         onClick = { showMenu = false; showShareSheet = true }
                     )
                     HorizontalDivider()
                     DropdownMenuItem(
-                        text = { Text("View on Last.fm") },
+                        text = { Text(stringResource(id = R.string.artist_detail_view_on_lastfm)) },
                         leadingIcon = { Icon(Icons.Filled.MusicNote, contentDescription = null) },
                         onClick = {
                             showMenu = false
@@ -173,7 +175,7 @@ fun ArtistDetailScreen(
                         }
                     )
                     DropdownMenuItem(
-                        text = { Text("View on Spotify") },
+                        text = { Text(stringResource(id = R.string.artist_detail_view_on_spotify)) },
                         leadingIcon = { Icon(Icons.Filled.PlayCircle, contentDescription = null) },
                         onClick = {
                             showMenu = false
@@ -231,7 +233,7 @@ fun ArtistDetailScreen(
             if (albums.isNotEmpty()) {
                 item(span = { GridItemSpan(maxLineSpan) }) {
                     Text(
-                        text = "Albums",
+                        text = stringResource(id = R.string.artist_detail_section_albums),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp)
@@ -252,7 +254,7 @@ fun ArtistDetailScreen(
             if (appearsInAlbums.isNotEmpty()) {
                 item(span = { GridItemSpan(maxLineSpan) }) {
                     Text(
-                        text = "Appears On",
+                        text = stringResource(id = R.string.artist_detail_section_appears_on),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp)
@@ -405,7 +407,7 @@ private fun ArtistHeader(
         }
 
         Text(
-            text = "$albumCount Albums • $songCount Songs",
+            text = stringResource(id = R.string.artist_detail_album_song_count, albumCount, songCount),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(top = 8.dp)
@@ -431,7 +433,7 @@ private fun ArtistHeader(
             ) {
                 Icon(Icons.Filled.PlayArrow, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimary)
                 Spacer(modifier = Modifier.width(8.dp))
-                Text(text = "Play", color = MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.SemiBold)
+                Text(text = stringResource(id = R.string.artist_detail_play_button), color = MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.SemiBold)
             }
             CircleActionButton(onClick = onToggleFavorite) {
                 Icon(
@@ -480,7 +482,7 @@ private fun TopSongsSection(
 ) {
     Column(modifier = Modifier.fillMaxWidth()) {
         Text(
-            text = "Top Songs",
+            text = stringResource(id = R.string.artist_detail_top_songs_title),
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(bottom = 8.dp)
@@ -628,7 +630,7 @@ private fun formatTrackDuration(totalSeconds: Int): String {
 private fun BioSection(artistName: String, bio: String, expanded: Boolean, onToggle: () -> Unit) {
     Column(modifier = Modifier.fillMaxWidth().clickable(onClick = onToggle)) {
         Text(
-            text = "About $artistName",
+            text = stringResource(id = R.string.artist_detail_about_artist, artistName),
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(bottom = 8.dp)
@@ -651,7 +653,7 @@ private fun SimilarArtistsSection(
 ) {
     Column(modifier = Modifier.fillMaxWidth()) {
         Text(
-            text = "Similar Artists",
+            text = stringResource(id = R.string.artist_detail_similar_artists_title),
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(bottom = 12.dp)

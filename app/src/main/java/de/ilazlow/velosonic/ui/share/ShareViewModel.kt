@@ -1,8 +1,10 @@
 package de.ilazlow.velosonic.ui.share
 
+import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import de.ilazlow.velosonic.R
 import de.ilazlow.velosonic.data.share.ShareRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -14,11 +16,11 @@ import javax.inject.Inject
  *  this app's composite id (Subsonic's `createShare` needs the id it itself issued). */
 data class ShareTarget(val serverHost: String, val entityId: String, val title: String)
 
-enum class ShareExpiryOption(val label: String, val days: Int?) {
-    NEVER("Never", null),
-    ONE_DAY("1 Day", 1),
-    SEVEN_DAYS("7 Days", 7),
-    THIRTY_DAYS("30 Days", 30);
+enum class ShareExpiryOption(@StringRes val labelRes: Int, val days: Int?) {
+    NEVER(R.string.share_sheet_expiry_never, null),
+    ONE_DAY(R.string.share_sheet_expiry_one_day, 1),
+    SEVEN_DAYS(R.string.share_sheet_expiry_seven_days, 7),
+    THIRTY_DAYS(R.string.share_sheet_expiry_thirty_days, 30);
 
     fun toExpiresAtEpochMs(): Long? = days?.let { System.currentTimeMillis() + it * 24L * 60 * 60 * 1000 }
 }

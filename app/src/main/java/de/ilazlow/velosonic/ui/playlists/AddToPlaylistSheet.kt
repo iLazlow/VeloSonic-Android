@@ -28,6 +28,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -35,6 +36,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dagger.hilt.android.lifecycle.HiltViewModel
+import de.ilazlow.velosonic.R
 import de.ilazlow.velosonic.data.LibraryRepository
 import de.ilazlow.velosonic.data.db.PlaylistEntity
 import de.ilazlow.velosonic.data.db.TrackEntity
@@ -88,13 +90,13 @@ fun AddToPlaylistSheet(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(text = "Add to Playlist", style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
-                TextButton(onClick = onDismiss) { Text("Cancel") }
+                Text(text = stringResource(R.string.add_to_playlist_title), style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
+                TextButton(onClick = onDismiss) { Text(stringResource(R.string.add_to_playlist_cancel)) }
             }
             Spacer(modifier = Modifier.height(8.dp))
             if (ownPlaylists.isEmpty()) {
                 Text(
-                    text = "Create a playlist first.",
+                    text = stringResource(R.string.add_to_playlist_empty_state),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center,
@@ -123,7 +125,7 @@ fun AddToPlaylistSheet(
                             Column {
                                 Text(text = playlist.name, style = MaterialTheme.typography.bodyLarge)
                                 Text(
-                                    text = "${playlist.songCount} tracks",
+                                    text = stringResource(R.string.add_to_playlist_track_count, playlist.songCount),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )

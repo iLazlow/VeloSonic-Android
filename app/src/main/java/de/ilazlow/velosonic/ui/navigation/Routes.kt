@@ -46,6 +46,7 @@ import kotlinx.serialization.Serializable
 @Serializable data class SettingsTranscodingRoute(val target: String)
 @Serializable object SettingsSharingRoute
 @Serializable object SettingsApiRoute
+@Serializable object SettingsLanguageRoute
 @Serializable object SettingsDatabaseRoute
 @Serializable object SettingsDatabaseViewerRoute
 @Serializable data class SettingsDatabaseTableRoute(val tableName: String)

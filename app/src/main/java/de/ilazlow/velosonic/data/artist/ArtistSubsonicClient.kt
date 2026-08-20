@@ -4,6 +4,7 @@ import de.ilazlow.velosonic.data.db.ServerConfigEntity
 import de.ilazlow.velosonic.data.network.CoverArtUrlResolver
 import de.ilazlow.velosonic.data.network.SubsonicApi
 import de.ilazlow.velosonic.data.network.SubsonicUrlBuilder
+import de.ilazlow.velosonic.data.network.dto.ArtistDetailDto
 import de.ilazlow.velosonic.data.network.dto.ArtistInfoNodeDto
 import de.ilazlow.velosonic.data.network.dto.TrackDto
 import javax.inject.Inject
@@ -24,6 +25,17 @@ class ArtistSubsonicClient @Inject constructor(
         SubsonicUrlBuilder.build(config.host, endpoint, config.username, config.token, config.salt, extraParams = extra)
 
     fun configFor(serverHost: String): ServerConfigEntity? = coverArtUrlResolver.configFor(serverHost)
+
+    /** Full artist detail (name/starred/album list) — used as the on-demand fallback when
+     *  Artist Detail navigates to an artist that isn't synced into Room yet (e.g. a live search3
+     *  result), see [de.ilazlow.velosonic.ui.artist.ArtistDetailViewModel]'s init block. Every
+     *  other artist-detail field this screen shows already has its own independent network fetch
+     *  (top songs/bio/similar below) that only needs the resolved server host, not this call. */
+    suspend fun fetchArtist(config: ServerConfigEntity, artistId: String): ArtistDetailDto? = try {
+        api.get(url(config, "getArtist", mapOf("id" to artistId))).subsonicResponse?.artist
+    } catch (e: Exception) {
+        null
+    }
 
     /** Subsonic's `getTopSongs` is keyed by artist *name*, not id — matches iOS's
      *  `fetchTopSongs(artistName:)`. */

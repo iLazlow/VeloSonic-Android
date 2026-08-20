@@ -9,7 +9,9 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import de.ilazlow.velosonic.R
 
 /** Factors out the inline-search `OutlinedTextField` pattern already duplicated across
  *  `PlaylistsScreen`/`PlaylistDetailScreen` — used by every Library screen that mirrors iOS's
@@ -23,7 +25,7 @@ fun LibrarySearchField(
     OutlinedTextField(
         value = value,
         onValueChange = onValueChange,
-        placeholder = { Text("Search") },
+        placeholder = { Text(stringResource(id = R.string.library_search_field_placeholder)) },
         leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
         singleLine = true,
         modifier = modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)

@@ -4,6 +4,7 @@ import de.ilazlow.velosonic.data.db.ServerConfigEntity
 import de.ilazlow.velosonic.data.network.CoverArtUrlResolver
 import de.ilazlow.velosonic.data.network.SubsonicApi
 import de.ilazlow.velosonic.data.network.SubsonicUrlBuilder
+import de.ilazlow.velosonic.data.network.dto.AlbumDetailDto
 import de.ilazlow.velosonic.data.network.dto.PlayQueueNodeDto
 import de.ilazlow.velosonic.data.network.dto.TrackDto
 import javax.inject.Inject
@@ -75,6 +76,15 @@ class PlaybackSubsonicClient @Inject constructor(
         ).subsonicResponse?.status == "ok"
     } catch (e: Exception) {
         false
+    }
+
+    /** Full album detail (metadata + track listing) — used as the on-demand fallback when Album
+     *  Detail navigates to an album that isn't synced into Room yet (e.g. a live search3 result),
+     *  see [de.ilazlow.velosonic.ui.album.AlbumDetailViewModel]'s init block. */
+    suspend fun fetchAlbum(config: ServerConfigEntity, albumId: String): AlbumDetailDto? = try {
+        api.get(url(config, "getAlbum", mapOf("id" to albumId))).subsonicResponse?.album
+    } catch (e: Exception) {
+        null
     }
 
     suspend fun star(config: ServerConfigEntity, trackId: String): Boolean = try {

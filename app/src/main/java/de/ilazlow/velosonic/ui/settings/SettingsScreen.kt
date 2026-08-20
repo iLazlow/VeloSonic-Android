@@ -2,7 +2,6 @@ package de.ilazlow.velosonic.ui.settings
 
 import android.content.Intent
 import android.net.Uri
-import android.provider.Settings as AndroidSettings
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -57,6 +56,7 @@ import de.ilazlow.velosonic.ui.navigation.SettingsAppearanceRoute
 import de.ilazlow.velosonic.ui.navigation.SettingsAudioAnalysisRoute
 import de.ilazlow.velosonic.ui.navigation.SettingsDatabaseRoute
 import de.ilazlow.velosonic.ui.navigation.SettingsDebugRoute
+import de.ilazlow.velosonic.ui.navigation.SettingsLanguageRoute
 import de.ilazlow.velosonic.ui.navigation.SettingsLyricsRoute
 import de.ilazlow.velosonic.ui.navigation.SettingsPlaybackRoute
 import de.ilazlow.velosonic.ui.navigation.SettingsServersRoute
@@ -127,13 +127,7 @@ fun SettingsScreen(
             NavHubRow(
                 icon = Icons.Filled.Language,
                 label = stringResource(id = R.string.settings_root_change_app_language),
-                onClick = {
-                    val intent = Intent(AndroidSettings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
-                        data = Uri.fromParts("package", context.packageName, null)
-                    }
-                    context.startActivity(intent)
-                },
-                trailingIcon = Icons.Filled.OpenInNew
+                onClick = { onNavigate(SettingsLanguageRoute) }
             )
         }
 

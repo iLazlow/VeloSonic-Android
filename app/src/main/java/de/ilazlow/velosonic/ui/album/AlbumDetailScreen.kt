@@ -51,6 +51,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -58,6 +59,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.media3.exoplayer.offline.Download
+import de.ilazlow.velosonic.R
 import de.ilazlow.velosonic.data.db.AlbumEntity
 import de.ilazlow.velosonic.data.db.TrackEntity
 import de.ilazlow.velosonic.domain.goToArtistTarget
@@ -239,19 +241,19 @@ private fun AlbumTopBar(
             DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
                 if (isFullyDownloaded) {
                     DropdownMenuItem(
-                        text = { Text("Remove Downloads", color = MaterialTheme.colorScheme.error) },
+                        text = { Text(stringResource(id = R.string.album_detail_remove_downloads), color = MaterialTheme.colorScheme.error) },
                         leadingIcon = { Icon(Icons.Filled.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
                         onClick = { showMenu = false; onRemoveDownloads() }
                     )
                 } else {
                     DropdownMenuItem(
-                        text = { Text("Download Album") },
+                        text = { Text(stringResource(id = R.string.album_detail_download_album)) },
                         leadingIcon = { Icon(Icons.Filled.FileDownload, contentDescription = null) },
                         onClick = { showMenu = false; onDownloadAlbum() }
                     )
                 }
                 DropdownMenuItem(
-                    text = { Text("Share Album") },
+                    text = { Text(stringResource(id = R.string.album_detail_share_album)) },
                     leadingIcon = { Icon(Icons.Filled.Share, contentDescription = null) },
                     onClick = { showMenu = false; onShare() }
                 )
@@ -317,7 +319,7 @@ private fun AlbumHeader(
             }
             if (isLossless) {
                 Icon(Icons.Filled.GraphicEq, contentDescription = null, tint = Color.White.copy(alpha = 0.7f), modifier = Modifier.size(14.dp))
-                Text(text = "Lossless", style = MaterialTheme.typography.labelMedium, color = Color.White.copy(alpha = 0.7f))
+                Text(text = stringResource(id = R.string.album_detail_lossless_badge), style = MaterialTheme.typography.labelMedium, color = Color.White.copy(alpha = 0.7f))
             }
             if (isExplicit) {
                 ExplicitBadge()
@@ -357,7 +359,7 @@ private fun AlbumHeader(
             ) {
                 Icon(Icons.Filled.PlayArrow, contentDescription = null, tint = Color.Black)
                 Spacer(modifier = Modifier.width(8.dp))
-                Text(text = "Play", color = Color.Black, fontWeight = FontWeight.SemiBold)
+                Text(text = stringResource(id = R.string.album_detail_play_button), color = Color.Black, fontWeight = FontWeight.SemiBold)
             }
             CircleActionButton(onClick = onToggleFavorite) {
                 Icon(
@@ -496,9 +498,18 @@ private fun AlbumFooter(album: AlbumEntity?, trackCount: Int, totalDurationSecon
             .fillMaxWidth()
             .padding(horizontal = 20.dp, vertical = 20.dp)
     ) {
-        val trackWord = if (trackCount == 1) "Track" else "Tracks"
+        val trackWord = if (trackCount == 1) {
+            stringResource(id = R.string.album_detail_footer_track_singular)
+        } else {
+            stringResource(id = R.string.album_detail_footer_track_plural)
+        }
         Text(
-            text = "$trackCount $trackWord • ${formatDurationMinutes(totalDurationSeconds)}",
+            text = stringResource(
+                id = R.string.album_detail_footer_summary,
+                trackCount,
+                trackWord,
+                formatDurationMinutes(totalDurationSeconds)
+            ),
             style = MaterialTheme.typography.labelMedium,
             fontWeight = FontWeight.Bold,
             color = Color.White
@@ -506,7 +517,7 @@ private fun AlbumFooter(album: AlbumEntity?, trackCount: Int, totalDurationSecon
         val year = album?.year
         if (year != null) {
             Text(
-                text = "© $year ${album.artistName}",
+                text = stringResource(id = R.string.album_detail_footer_copyright, year, album.artistName),
                 style = MaterialTheme.typography.labelSmall,
                 color = Color.White.copy(alpha = 0.6f),
                 modifier = Modifier.padding(top = 2.dp)
@@ -524,7 +535,7 @@ private fun MoreFromArtistSection(
 ) {
     Column(modifier = Modifier.padding(top = 8.dp, bottom = 24.dp)) {
         Text(
-            text = "More from $artistName",
+            text = stringResource(id = R.string.album_detail_more_from_artist, artistName),
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold,
             color = Color.White,

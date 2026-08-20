@@ -34,11 +34,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import de.ilazlow.velosonic.R
 import de.ilazlow.velosonic.data.db.TrackEntity
 import de.ilazlow.velosonic.ui.common.CoverArtTile
 import de.ilazlow.velosonic.ui.common.NowPlayingIndicator
@@ -71,20 +73,20 @@ fun QueueScreen(onDismiss: () -> Unit, viewModel: QueueViewModel = hiltViewModel
                 Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
             }
             Text(
-                text = "Up Next",
+                text = stringResource(R.string.queue_up_next_title),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold,
                 modifier = Modifier.weight(1f)
             )
             IconButton(onClick = { confirmClear = true }, enabled = nowPlaying.queue.isNotEmpty()) {
-                Icon(Icons.Filled.ClearAll, contentDescription = "Clear Queue")
+                Icon(Icons.Filled.ClearAll, contentDescription = stringResource(R.string.queue_clear_queue_content_description))
             }
         }
 
         if (nowPlaying.queue.isEmpty()) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Text(
-                    text = "Nothing queued",
+                    text = stringResource(R.string.queue_nothing_queued),
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -135,18 +137,18 @@ fun QueueScreen(onDismiss: () -> Unit, viewModel: QueueViewModel = hiltViewModel
     if (confirmClear) {
         AlertDialog(
             onDismissRequest = { confirmClear = false },
-            title = { Text("Clear Queue?") },
-            text = { Text("Stops playback and removes every track from the queue.") },
+            title = { Text(stringResource(R.string.queue_clear_queue_dialog_title)) },
+            text = { Text(stringResource(R.string.queue_clear_queue_dialog_message)) },
             confirmButton = {
                 TextButton(onClick = {
                     viewModel.clearQueue()
                     confirmClear = false
                     onDismiss()
                 }) {
-                    Text("Clear", color = MaterialTheme.colorScheme.error)
+                    Text(stringResource(R.string.queue_clear_queue_confirm), color = MaterialTheme.colorScheme.error)
                 }
             },
-            dismissButton = { TextButton(onClick = { confirmClear = false }) { Text("Cancel") } }
+            dismissButton = { TextButton(onClick = { confirmClear = false }) { Text(stringResource(R.string.queue_clear_queue_cancel)) } }
         )
     }
 }

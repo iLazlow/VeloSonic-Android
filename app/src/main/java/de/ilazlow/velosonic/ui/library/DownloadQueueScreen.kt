@@ -30,12 +30,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.media3.exoplayer.offline.Download
+import de.ilazlow.velosonic.R
 import de.ilazlow.velosonic.ui.common.CoverArtTile
 
 /**
@@ -64,42 +66,45 @@ fun DownloadQueueScreen(onDismiss: () -> Unit, viewModel: DownloadQueueViewModel
                 Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
             }
             Text(
-                text = "Downloads",
+                text = stringResource(id = R.string.download_queue_title),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold,
                 modifier = Modifier.weight(1f)
             )
             if (state.hasActive) {
                 TextButton(onClick = viewModel::cancelQueue) {
-                    Text("Cancel Queue", color = MaterialTheme.colorScheme.error)
+                    Text(stringResource(id = R.string.download_queue_cancel_queue), color = MaterialTheme.colorScheme.error)
                 }
             }
             if (state.hasFailed) {
-                TextButton(onClick = viewModel::retryAllFailed) { Text("Retry All") }
+                TextButton(onClick = viewModel::retryAllFailed) { Text(stringResource(id = R.string.download_queue_retry_all)) }
             }
             if (state.hasFinished) {
-                TextButton(onClick = viewModel::clearFinished) { Text("Clear") }
+                TextButton(onClick = viewModel::clearFinished) { Text(stringResource(id = R.string.download_queue_clear)) }
             }
         }
 
         if (state.isEmpty) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Text(
-                    text = "No downloads in progress",
+                    text = stringResource(id = R.string.download_queue_empty),
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         } else {
+            val inProgressLabel = stringResource(id = R.string.download_queue_section_in_progress)
+            val failedLabel = stringResource(id = R.string.download_queue_section_failed)
+            val completedLabel = stringResource(id = R.string.download_queue_section_completed)
             LazyColumn(modifier = Modifier.fillMaxSize()) {
                 if (state.inProgress.isNotEmpty()) {
-                    section("In Progress")
+                    section(inProgressLabel)
                     items(state.inProgress, key = { it.download.request.id }) { item ->
                         DownloadActivityRow(item = item, coverArtUrl = viewModel::coverArtUrl, onRetry = null)
                     }
                 }
                 if (state.failed.isNotEmpty()) {
-                    section("Failed")
+                    section(failedLabel)
                     items(state.failed, key = { it.download.request.id }) { item ->
                         DownloadActivityRow(
                             item = item,
@@ -109,7 +114,7 @@ fun DownloadQueueScreen(onDismiss: () -> Unit, viewModel: DownloadQueueViewModel
                     }
                 }
                 if (state.completed.isNotEmpty()) {
-                    section("Completed")
+                    section(completedLabel)
                     items(state.completed, key = { it.download.request.id }) { item ->
                         DownloadActivityRow(item = item, coverArtUrl = viewModel::coverArtUrl, onRetry = null)
                     }
@@ -179,33 +184,33 @@ private fun DownloadStatusIcon(download: Download, onRetry: (() -> Unit)?) {
     when (download.state) {
         Download.STATE_QUEUED -> Icon(
             Icons.Filled.HourglassEmpty,
-            contentDescription = "Queued",
+            contentDescription = stringResource(id = R.string.download_queue_status_queued_content_description),
             tint = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.size(18.dp)
         )
         Download.STATE_DOWNLOADING -> if (download.percentDownloaded > 0f) {
             Text(
-                text = "${download.percentDownloaded.toInt()}%",
+                text = stringResource(id = R.string.download_queue_status_percent, download.percentDownloaded.toInt()),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
         Download.STATE_COMPLETED -> Icon(
             Icons.Filled.CheckCircle,
-            contentDescription = "Completed",
+            contentDescription = stringResource(id = R.string.download_queue_status_completed_content_description),
             tint = MaterialTheme.colorScheme.primary,
             modifier = Modifier.size(18.dp)
         )
         Download.STATE_FAILED -> Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
             Icon(
                 Icons.Filled.Error,
-                contentDescription = "Failed",
+                contentDescription = stringResource(id = R.string.download_queue_status_failed_content_description),
                 tint = MaterialTheme.colorScheme.error,
                 modifier = Modifier.size(18.dp)
             )
             if (onRetry != null) {
                 IconButton(onClick = onRetry, modifier = Modifier.size(28.dp)) {
-                    Icon(Icons.Filled.Refresh, contentDescription = "Retry", modifier = Modifier.size(16.dp))
+                    Icon(Icons.Filled.Refresh, contentDescription = stringResource(id = R.string.download_queue_status_retry_content_description), modifier = Modifier.size(16.dp))
                 }
             }
         }

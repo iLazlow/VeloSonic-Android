@@ -40,9 +40,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import de.ilazlow.velosonic.R
 import de.ilazlow.velosonic.data.playlist.SPCriteria
 import de.ilazlow.velosonic.data.playlist.SPFieldDef
 import de.ilazlow.velosonic.data.playlist.SPFieldType
@@ -64,21 +66,23 @@ fun SmartPlaylistEditorSection(
 ) {
     Column(modifier = modifier) {
         Spacer(modifier = Modifier.height(16.dp))
-        SmartSectionHeader("Match")
+        SmartSectionHeader(stringResource(R.string.smart_playlist_editor_section_match))
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 4.dp)) {
-            Text("Match", style = MaterialTheme.typography.bodyLarge)
+            val matchAllLabel = stringResource(R.string.smart_playlist_editor_match_all)
+            val matchAnyLabel = stringResource(R.string.smart_playlist_editor_match_any)
+            Text(stringResource(R.string.smart_playlist_editor_match_label), style = MaterialTheme.typography.bodyLarge)
             Spacer(modifier = Modifier.width(8.dp))
             SmartChipMenu(
-                label = if (criteria.matchAll) "all" else "any",
-                options = listOf("all" to "all", "any" to "any"),
+                label = if (criteria.matchAll) matchAllLabel else matchAnyLabel,
+                options = listOf("all" to matchAllLabel, "any" to matchAnyLabel),
                 onSelect = { key -> onCriteriaChange(criteria.copy(matchAll = key == "all")) }
             )
             Spacer(modifier = Modifier.width(8.dp))
-            Text("of the following rules", style = MaterialTheme.typography.bodyLarge)
+            Text(stringResource(R.string.smart_playlist_editor_of_following_rules), style = MaterialTheme.typography.bodyLarge)
         }
 
         Spacer(modifier = Modifier.height(12.dp))
-        SmartSectionHeader("Rules")
+        SmartSectionHeader(stringResource(R.string.smart_playlist_editor_section_rules))
         criteria.rules.forEach { rule ->
             SmartPlaylistRuleRow(
                 rule = rule,
@@ -95,19 +99,20 @@ fun SmartPlaylistEditorSection(
         TextButton(onClick = { onCriteriaChange(criteria.copy(rules = criteria.rules + SPRule())) }) {
             Icon(Icons.Filled.Add, contentDescription = null, modifier = Modifier.size(18.dp))
             Spacer(modifier = Modifier.width(4.dp))
-            Text("Add Rule")
+            Text(stringResource(R.string.smart_playlist_editor_add_rule))
         }
 
         Spacer(modifier = Modifier.height(12.dp))
-        SmartSectionHeader("Sort")
-        val sortOptions = remember { listOf("+random" to "Random") + SPFieldDef.all.map { it.key to it.label } }
+        SmartSectionHeader(stringResource(R.string.smart_playlist_editor_section_sort))
+        val randomLabel = stringResource(R.string.smart_playlist_editor_sort_random)
+        val sortOptions = remember(randomLabel) { listOf("+random" to randomLabel) + SPFieldDef.all.map { it.key to it.label } }
         val currentSortLabel = sortOptions.firstOrNull { it.first == criteria.sortField }?.second ?: criteria.sortField
         Row(
             modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text("Sort by", style = MaterialTheme.typography.bodyLarge)
+            Text(stringResource(R.string.smart_playlist_editor_sort_by_label), style = MaterialTheme.typography.bodyLarge)
             SmartChipMenu(label = currentSortLabel, options = sortOptions, onSelect = { key -> onCriteriaChange(criteria.copy(sortField = key)) })
         }
         Row(
@@ -115,10 +120,12 @@ fun SmartPlaylistEditorSection(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text("Order", style = MaterialTheme.typography.bodyLarge)
+            val ascendingLabel = stringResource(R.string.smart_playlist_editor_ascending)
+            val descendingLabel = stringResource(R.string.smart_playlist_editor_descending)
+            Text(stringResource(R.string.smart_playlist_editor_order_label), style = MaterialTheme.typography.bodyLarge)
             SmartChipMenu(
-                label = if (criteria.sortOrder == "desc") "Descending" else "Ascending",
-                options = listOf("asc" to "Ascending", "desc" to "Descending"),
+                label = if (criteria.sortOrder == "desc") descendingLabel else ascendingLabel,
+                options = listOf("asc" to ascendingLabel, "desc" to descendingLabel),
                 onSelect = { key -> onCriteriaChange(criteria.copy(sortOrder = key)) }
             )
         }
@@ -129,7 +136,7 @@ fun SmartPlaylistEditorSection(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text("Limit Results", style = MaterialTheme.typography.bodyLarge)
+            Text(stringResource(R.string.smart_playlist_editor_limit_results_label), style = MaterialTheme.typography.bodyLarge)
             Switch(checked = criteria.limitEnabled, onCheckedChange = { onCriteriaChange(criteria.copy(limitEnabled = it)) })
         }
         if (criteria.limitEnabled) {
@@ -138,7 +145,7 @@ fun SmartPlaylistEditorSection(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("${criteria.limit} songs", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(stringResource(R.string.smart_playlist_editor_limit_songs_count, criteria.limit), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Row {
                     TextButton(onClick = { onCriteriaChange(criteria.copy(limit = (criteria.limit - 10).coerceAtLeast(1))) }) { Text("−") }
                     TextButton(onClick = { onCriteriaChange(criteria.copy(limit = (criteria.limit + 10).coerceAtMost(10000))) }) { Text("+") }
@@ -211,7 +218,7 @@ private fun SmartPlaylistRuleRow(rule: SPRule, onChange: (SPRule) -> Unit, onDel
             )
             Spacer(modifier = Modifier.weight(1f))
             IconButton(onClick = onDelete, modifier = Modifier.size(32.dp)) {
-                Icon(Icons.Filled.Close, contentDescription = "Remove rule", tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp))
+                Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.smart_playlist_editor_remove_rule_content_description), tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp))
             }
         }
         Spacer(modifier = Modifier.height(6.dp))
@@ -226,7 +233,11 @@ private fun SmartRuleValueInput(fieldDef: SPFieldDef, rule: SPRule, onChange: (S
         SPFieldType.BOOLEAN -> {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Checkbox(checked = rule.boolValue, onCheckedChange = { onChange(rule.copy(boolValue = it)) })
-                Text(if (rule.boolValue) "True" else "False", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(
+                    if (rule.boolValue) stringResource(R.string.smart_playlist_editor_true) else stringResource(R.string.smart_playlist_editor_false),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         }
 
@@ -234,7 +245,7 @@ private fun SmartRuleValueInput(fieldDef: SPFieldDef, rule: SPRule, onChange: (S
             OutlinedTextField(
                 value = rule.stringValue,
                 onValueChange = { onChange(rule.copy(stringValue = it)) },
-                placeholder = { Text("Value") },
+                placeholder = { Text(stringResource(R.string.smart_playlist_editor_value_placeholder)) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
             )
@@ -261,7 +272,7 @@ private fun SmartRuleValueInput(fieldDef: SPFieldDef, rule: SPRule, onChange: (S
                 OutlinedTextField(
                     value = rule.stringValue,
                     onValueChange = { onChange(rule.copy(stringValue = it)) },
-                    placeholder = { Text("Number") },
+                    placeholder = { Text(stringResource(R.string.smart_playlist_editor_number_placeholder)) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -278,7 +289,7 @@ private fun SmartRuleValueInput(fieldDef: SPFieldDef, rule: SPRule, onChange: (S
                         singleLine = true,
                         modifier = Modifier.size(width = 90.dp, height = 56.dp)
                     )
-                    Text("days", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.smart_playlist_editor_days_label), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             } else {
                 var showPicker by remember { mutableStateOf(false) }
@@ -293,9 +304,9 @@ private fun SmartRuleValueInput(fieldDef: SPFieldDef, rule: SPRule, onChange: (S
                             TextButton(onClick = {
                                 state.selectedDateMillis?.let { onChange(rule.copy(dateValue = java.util.Date(it))) }
                                 showPicker = false
-                            }) { Text("OK") }
+                            }) { Text(stringResource(R.string.smart_playlist_editor_ok)) }
                         },
-                        dismissButton = { TextButton(onClick = { showPicker = false }) { Text("Cancel") } }
+                        dismissButton = { TextButton(onClick = { showPicker = false }) { Text(stringResource(R.string.smart_playlist_editor_cancel)) } }
                     ) {
                         DatePicker(state = state)
                     }

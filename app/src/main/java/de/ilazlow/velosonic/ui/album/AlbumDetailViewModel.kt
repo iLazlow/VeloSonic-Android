@@ -14,6 +14,9 @@ import de.ilazlow.velosonic.data.download.DownloadRepository
 import de.ilazlow.velosonic.data.network.CoverArtUrlResolver
 import de.ilazlow.velosonic.data.network.NetworkAvailability
 import de.ilazlow.velosonic.data.playback.PlaybackSubsonicClient
+import de.ilazlow.velosonic.data.sync.resolveCompositeId
+import de.ilazlow.velosonic.data.sync.toFreshEntity
+import de.ilazlow.velosonic.data.sync.toStandaloneEntity
 import androidx.media3.exoplayer.offline.Download
 import de.ilazlow.velosonic.playback.NowPlaying
 import de.ilazlow.velosonic.playback.PlaybackController
@@ -50,7 +53,15 @@ class AlbumDetailViewModel @Inject constructor(
     private val _album = MutableStateFlow<AlbumEntity?>(null)
     val album: StateFlow<AlbumEntity?> = _album.asStateFlow()
 
-    val tracks: StateFlow<List<TrackEntity>> = libraryRepository.observeTracksByAlbum(route.albumId)
+    /** Populated only when this album isn't synced into Room at all yet (e.g. navigated to from a
+     *  live search3 result — see the init block's fallback) — [tracks] prefers the Room-observed
+     *  list whenever it's non-empty, so this is superseded automatically the moment a background
+     *  sync actually picks the album up. */
+    private val _networkFallbackTracks = MutableStateFlow<List<TrackEntity>>(emptyList())
+    val tracks: StateFlow<List<TrackEntity>> = combine(
+        libraryRepository.observeTracksByAlbum(route.albumId),
+        _networkFallbackTracks
+    ) { local, network -> local.ifEmpty { network } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     val animateWebpArtwork: StateFlow<Boolean> = appearanceSettingsStore.settings
@@ -104,7 +115,21 @@ class AlbumDetailViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
-            _album.value = libraryRepository.getAlbumById(route.albumId)
+            // Not synced locally yet — e.g. navigated to from a live search3 result that was
+            // never part of a background sync. Resolve which server it came from against the
+            // composite id, then fetch fresh via getAlbum instead of leaving the whole screen
+            // blank.
+            val local = libraryRepository.getAlbumById(route.albumId)
+            if (local != null) {
+                _album.value = local
+                return@launch
+            }
+            val hosts = coverArtUrlResolver.allConfigs().map { it.host }
+            val (host, subsonicId) = resolveCompositeId(route.albumId, hosts) ?: return@launch
+            val config = subsonicClient.configFor(host) ?: return@launch
+            val detail = subsonicClient.fetchAlbum(config, subsonicId) ?: return@launch
+            _album.value = detail.toFreshEntity(host)
+            _networkFallbackTracks.value = detail.song.orEmpty().map { it.toStandaloneEntity(host) }
         }
     }
 

@@ -34,6 +34,7 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Radio
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilterChip
@@ -53,6 +54,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
@@ -60,6 +62,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.media3.exoplayer.offline.Download
+import de.ilazlow.velosonic.R
 import de.ilazlow.velosonic.data.db.AlbumEntity
 import de.ilazlow.velosonic.data.db.ArtistEntity
 import de.ilazlow.velosonic.data.db.RadioStationEntity
@@ -75,9 +78,11 @@ import de.ilazlow.velosonic.ui.playlists.AddToPlaylistSheet
 import de.ilazlow.velosonic.ui.share.ShareSheet
 import de.ilazlow.velosonic.ui.share.ShareTarget
 
-/** Mirrors SearchView.swift / SearchViewModel.swift: search is entirely local, filtering the
- *  already-synced library (never a network round-trip) with a 300ms debounce. Top Hits caps
- *  (artists 1 / albums 3 / songs 5 / radio 2) and the recent-searches history match iOS exactly. */
+/** Mirrors SearchView.swift / SearchViewModel.swift's layout (Top Hits caps: artists 1 / albums 3
+ *  / songs 5 / radio 2, recent-searches history) but not its purely-local search — this hits every
+ *  visible server's `search3` live with the already-synced local library as a per-host fallback,
+ *  see [SearchViewModel]'s doc comment. 300ms debounce before firing, same as iOS's local-filter
+ *  debounce. */
 @Composable
 fun SearchScreen(
     onArtistClick: (id: String, name: String) -> Unit,
@@ -98,12 +103,13 @@ fun SearchScreen(
         OutlinedTextField(
             value = query,
             onValueChange = viewModel::onQueryChange,
-            placeholder = { Text("Artists, Albums, Songs") },
+            placeholder = { Text(stringResource(id = R.string.search_field_placeholder)) },
             leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
             trailingIcon = {
-                if (query.isNotEmpty()) {
-                    IconButton(onClick = { viewModel.onQueryChange("") }) {
-                        Icon(Icons.Filled.Clear, contentDescription = "Clear")
+                when {
+                    state.isSearching -> CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                    query.isNotEmpty() -> IconButton(onClick = { viewModel.onQueryChange("") }) {
+                        Icon(Icons.Filled.Clear, contentDescription = stringResource(id = R.string.search_query_clear_content_description))
                     }
                 }
             },
@@ -132,7 +138,7 @@ fun SearchScreen(
         when {
             query.isBlank() -> {
                 if (state.recentSearches.isEmpty()) {
-                    EmptyState(icon = Icons.Filled.Search, text = "Find artists, albums, and songs")
+                    EmptyState(icon = Icons.Filled.Search, text = stringResource(id = R.string.search_empty_no_query))
                 } else {
                     RecentSearchesList(
                         terms = state.recentSearches,
@@ -142,7 +148,8 @@ fun SearchScreen(
                     )
                 }
             }
-            !state.hasResults -> EmptyState(icon = Icons.Filled.Search, text = "No results for \"$query\"")
+            !state.hasResults && state.isSearching -> EmptyState(icon = Icons.Filled.Search, text = stringResource(id = R.string.search_searching))
+            !state.hasResults -> EmptyState(icon = Icons.Filled.Search, text = stringResource(id = R.string.search_empty_no_results, query))
             else -> {
                 LazyColumn(modifier = Modifier.fillMaxSize()) {
                     val showArtists = state.filter == SearchFilter.TOP_HITS || state.filter == SearchFilter.ARTISTS
@@ -157,7 +164,7 @@ fun SearchScreen(
                     val radio = if (isTopHits) state.radioStations.take(2) else state.radioStations
 
                     if (showArtists && artists.isNotEmpty()) {
-                        item { SectionHeader("Artists") }
+                        item { SectionHeader(stringResource(id = R.string.search_section_artists)) }
                         items(artists, key = { "artist_${it.id}" }) { artist ->
                             SearchArtistRow(
                                 artist = artist,
@@ -167,7 +174,7 @@ fun SearchScreen(
                         }
                     }
                     if (showAlbums && albums.isNotEmpty()) {
-                        item { SectionHeader("Albums") }
+                        item { SectionHeader(stringResource(id = R.string.search_section_albums)) }
                         items(albums, key = { "album_${it.id}" }) { album ->
                             SearchAlbumRow(
                                 album = album,
@@ -178,7 +185,7 @@ fun SearchScreen(
                         }
                     }
                     if (showSongs && tracks.isNotEmpty()) {
-                        item { SectionHeader("Songs") }
+                        item { SectionHeader(stringResource(id = R.string.search_section_songs)) }
                         items(tracks, key = { "track_${it.id}" }) { track ->
                             val downloadState = state.downloads[track.id]?.state
                             val isCached = viewModel.isTrackCached(track)
@@ -206,7 +213,7 @@ fun SearchScreen(
                         }
                     }
                     if (showRadio && radio.isNotEmpty()) {
-                        item { SectionHeader("Radio") }
+                        item { SectionHeader(stringResource(id = R.string.search_section_radio)) }
                         items(radio, key = { "radio_${it.id}" }) { station ->
                             SearchRadioRow(
                                 station = station,
@@ -240,12 +247,13 @@ fun SearchScreen(
     }
 }
 
+@Composable
 private fun SearchFilter.label(): String = when (this) {
-    SearchFilter.TOP_HITS -> "Top Hits"
-    SearchFilter.ARTISTS -> "Artists"
-    SearchFilter.ALBUMS -> "Albums"
-    SearchFilter.SONGS -> "Songs"
-    SearchFilter.RADIO -> "Radio"
+    SearchFilter.TOP_HITS -> stringResource(id = R.string.search_filter_top_hits)
+    SearchFilter.ARTISTS -> stringResource(id = R.string.search_filter_artists)
+    SearchFilter.ALBUMS -> stringResource(id = R.string.search_filter_albums)
+    SearchFilter.SONGS -> stringResource(id = R.string.search_filter_songs)
+    SearchFilter.RADIO -> stringResource(id = R.string.search_filter_radio)
 }
 
 @Composable
@@ -298,8 +306,8 @@ private fun RecentSearchesList(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("Recent Searches", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
-                TextButton(onClick = onClearAll) { Text("Clear") }
+                Text(stringResource(id = R.string.search_recent_searches_title), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                TextButton(onClick = onClearAll) { Text(stringResource(id = R.string.search_recent_searches_clear_button)) }
             }
         }
         items(terms, key = { it }) { term ->
@@ -311,7 +319,7 @@ private fun RecentSearchesList(
                 Icon(Icons.Filled.History, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                 Text(term, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
                 IconButton(onClick = { onRemove(term) }) {
-                    Icon(Icons.Filled.Close, contentDescription = "Remove", tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
+                    Icon(Icons.Filled.Close, contentDescription = stringResource(id = R.string.search_recent_search_remove_content_description), tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
                 }
             }
         }
@@ -334,7 +342,7 @@ private fun SearchArtistRow(artist: ArtistEntity, serverBadge: String?, onClick:
         Column(modifier = Modifier.weight(1f)) {
             Text(artist.name, style = MaterialTheme.typography.bodyLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text("Artist", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(stringResource(id = R.string.search_artist_row_type_label), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 ServerBadge(serverBadge)
             }
         }
@@ -375,7 +383,7 @@ private fun SearchRadioRow(station: RadioStationEntity, serverBadge: String?, is
         Column(modifier = Modifier.weight(1f)) {
             Text(station.name, style = MaterialTheme.typography.bodyLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text("Radio", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(stringResource(id = R.string.search_radio_row_type_label), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 ServerBadge(serverBadge)
             }
         }

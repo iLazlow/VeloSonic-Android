@@ -28,11 +28,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import de.ilazlow.velosonic.R
 import de.ilazlow.velosonic.data.share.ShareItem
 import de.ilazlow.velosonic.ui.settings.SettingsSectionHeader
 import de.ilazlow.velosonic.ui.settings.SettingsTopBar
@@ -58,13 +60,13 @@ fun ManageSharesScreen(onBack: () -> Unit, viewModel: ManageSharesViewModel = hi
     val grouped = remember(shares) { shares.groupBy { it.serverHost } }
 
     Column(modifier = Modifier.fillMaxSize()) {
-        SettingsTopBar("Manage Shares", onBack)
+        SettingsTopBar(stringResource(id = R.string.manage_shares_title), onBack)
         when {
             isLoading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator()
             }
             shares.isEmpty() -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("No shares yet", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(stringResource(id = R.string.manage_shares_empty), color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             else -> LazyColumn(modifier = Modifier.fillMaxSize()) {
                 grouped.forEach { (host, items) ->
@@ -85,14 +87,14 @@ fun ManageSharesScreen(onBack: () -> Unit, viewModel: ManageSharesViewModel = hi
     deleteTarget?.let { target ->
         AlertDialog(
             onDismissRequest = { deleteTarget = null },
-            title = { Text("Delete this share?") },
-            text = { Text("The link will stop working immediately.") },
+            title = { Text(stringResource(id = R.string.manage_shares_delete_dialog_title)) },
+            text = { Text(stringResource(id = R.string.manage_shares_delete_dialog_message)) },
             confirmButton = {
                 TextButton(onClick = { viewModel.delete(target); deleteTarget = null }) {
-                    Text("Delete", color = MaterialTheme.colorScheme.error)
+                    Text(stringResource(id = R.string.manage_shares_delete_action), color = MaterialTheme.colorScheme.error)
                 }
             },
-            dismissButton = { TextButton(onClick = { deleteTarget = null }) { Text("Cancel") } }
+            dismissButton = { TextButton(onClick = { deleteTarget = null }) { Text(stringResource(id = R.string.manage_shares_delete_dialog_cancel)) } }
         )
     }
 }
@@ -102,10 +104,17 @@ private fun ShareRow(item: ShareItem, onCopy: () -> Unit, onDelete: () -> Unit) 
     var showMenu by remember { mutableStateOf(false) }
     val share = item.share
     val firstEntry = share.entry?.firstOrNull()
-    val title = firstEntry?.title ?: share.description?.takeIf { it.isNotBlank() } ?: "Share #${share.id}"
+    val title = firstEntry?.title ?: share.description?.takeIf { it.isNotBlank() }
+        ?: stringResource(id = R.string.manage_shares_row_fallback_title, share.id)
     val subtitle = listOfNotNull(firstEntry?.artist, firstEntry?.album).joinToString(" • ").ifBlank { share.description }
     val visits = share.visitCount ?: 0
-    val expiryLabel = formatIsoInstant(share.expires)?.let { "Expires $it" } ?: "No expiry"
+    val expiryLabel = formatIsoInstant(share.expires)?.let { stringResource(id = R.string.manage_shares_expires_label, it) }
+        ?: stringResource(id = R.string.manage_shares_no_expiry)
+    val visitWord = if (visits == 1) {
+        stringResource(id = R.string.manage_shares_visit_singular)
+    } else {
+        stringResource(id = R.string.manage_shares_visit_plural)
+    }
 
     Row(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 12.dp),
@@ -123,7 +132,7 @@ private fun ShareRow(item: ShareItem, onCopy: () -> Unit, onDelete: () -> Unit) 
                 )
             }
             Text(
-                text = "${visits} ${if (visits == 1) "visit" else "visits"} • $expiryLabel",
+                text = stringResource(id = R.string.manage_shares_visits_summary, visits, visitWord, expiryLabel),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -133,9 +142,9 @@ private fun ShareRow(item: ShareItem, onCopy: () -> Unit, onDelete: () -> Unit) 
                 Icon(Icons.Filled.MoreVert, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
-                DropdownMenuItem(text = { Text("Copy Link") }, onClick = { showMenu = false; onCopy() })
+                DropdownMenuItem(text = { Text(stringResource(id = R.string.manage_shares_copy_link)) }, onClick = { showMenu = false; onCopy() })
                 DropdownMenuItem(
-                    text = { Text("Delete", color = MaterialTheme.colorScheme.error) },
+                    text = { Text(stringResource(id = R.string.manage_shares_delete_action), color = MaterialTheme.colorScheme.error) },
                     onClick = { showMenu = false; onDelete() }
                 )
             }

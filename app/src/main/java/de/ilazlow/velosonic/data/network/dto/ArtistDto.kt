@@ -13,7 +13,8 @@ data class SubsonicArtistDto(
 data class ArtistDetailDto(
     val id: String,
     val name: String,
-    val album: List<AlbumDto>? = null
+    val album: List<AlbumDto>? = null,
+    val starred: String? = null
 )
 
 @Serializable

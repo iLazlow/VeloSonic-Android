@@ -75,6 +75,7 @@ import de.ilazlow.velosonic.ui.navigation.PlaylistImportRoute
 import de.ilazlow.velosonic.ui.navigation.PlaylistsRoute
 import de.ilazlow.velosonic.ui.navigation.SearchRoute
 import de.ilazlow.velosonic.ui.navigation.SettingsApiRoute
+import de.ilazlow.velosonic.ui.navigation.SettingsLanguageRoute
 import de.ilazlow.velosonic.ui.navigation.SettingsAppearanceRoute
 import de.ilazlow.velosonic.ui.navigation.SettingsAudioAnalysisRoute
 import de.ilazlow.velosonic.ui.navigation.SettingsBackupRoute
@@ -118,6 +119,7 @@ import de.ilazlow.velosonic.ui.settings.DebugFullLogScreen
 import de.ilazlow.velosonic.ui.settings.DebugSettingsScreen
 import de.ilazlow.velosonic.ui.settings.EqSettingsScreen
 import de.ilazlow.velosonic.ui.settings.KawarpSettingsScreen
+import de.ilazlow.velosonic.ui.settings.LanguageSettingsScreen
 import de.ilazlow.velosonic.ui.settings.LyricsSettingsScreen
 import de.ilazlow.velosonic.ui.settings.RadiantLyricsCacheListScreen
 import de.ilazlow.velosonic.ui.settings.RadiantLyricsCacheDetailScreen
@@ -332,6 +334,9 @@ fun AppShell(deepLinkViewModel: DeepLinkViewModel = hiltViewModel()) {
                     }
                     composable<SettingsApiRoute> {
                         ApiSettingsScreen(onBack = { navController.navigateUp() })
+                    }
+                    composable<SettingsLanguageRoute> {
+                        LanguageSettingsScreen(onBack = { navController.navigateUp() })
                     }
                     composable<SettingsDatabaseRoute> {
                         DatabaseSettingsScreen(

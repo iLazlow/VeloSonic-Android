@@ -57,11 +57,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import de.ilazlow.velosonic.R
 import de.ilazlow.velosonic.data.datastore.PlaylistFilterMode
 import de.ilazlow.velosonic.data.datastore.PlaylistSortOrder
 import de.ilazlow.velosonic.data.datastore.PlaylistViewMode
@@ -76,12 +78,12 @@ import de.ilazlow.velosonic.ui.common.CoverArtTile
  * floating action button.
  */
 private val PlaylistSortOrder.label: String
-    get() = when (this) {
-        PlaylistSortOrder.NAME -> "Name"
-        PlaylistSortOrder.DATE_CREATED -> "Date Created"
-        PlaylistSortOrder.LAST_MODIFIED -> "Last Modified"
-        PlaylistSortOrder.DURATION -> "Duration"
-        PlaylistSortOrder.SONG_COUNT -> "Song Count"
+    @Composable get() = when (this) {
+        PlaylistSortOrder.NAME -> stringResource(R.string.playlists_sort_name)
+        PlaylistSortOrder.DATE_CREATED -> stringResource(R.string.playlists_sort_date_created)
+        PlaylistSortOrder.LAST_MODIFIED -> stringResource(R.string.playlists_sort_last_modified)
+        PlaylistSortOrder.DURATION -> stringResource(R.string.playlists_sort_duration)
+        PlaylistSortOrder.SONG_COUNT -> stringResource(R.string.playlists_sort_song_count)
     }
 @Composable
 fun PlaylistsScreen(
@@ -105,7 +107,8 @@ fun PlaylistsScreen(
     // Mirrors iOS's `showLikedSongsRow()` — always shown unless the user is actively searching
     // for something that doesn't match "Liked Songs" by name (not gated on whether anything is
     // actually starred; an empty Liked Songs still opens to its own empty state).
-    val showLikedSongsRow = searchText.isBlank() || "Liked Songs".contains(searchText, ignoreCase = true)
+    val likedSongsRowTitle = stringResource(R.string.playlists_liked_songs_row_title)
+    val showLikedSongsRow = searchText.isBlank() || likedSongsRowTitle.contains(searchText, ignoreCase = true)
 
     val filtered = remember(playlists, searchText) {
         if (searchText.isBlank()) playlists else playlists.filter { it.name.contains(searchText, ignoreCase = true) }
@@ -122,7 +125,7 @@ fun PlaylistsScreen(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "Playlists",
+                text = stringResource(R.string.playlists_title),
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.weight(1f)
@@ -132,12 +135,12 @@ fun PlaylistsScreen(
                 IconButton(onClick = { showFilterMenu = true }) {
                     Icon(
                         imageVector = if (filterActive) Icons.Filled.FilterAlt else Icons.Outlined.FilterAlt,
-                        contentDescription = "Filter"
+                        contentDescription = stringResource(R.string.playlists_filter_content_description)
                     )
                 }
                 DropdownMenu(expanded = showFilterMenu, onDismissRequest = { showFilterMenu = false }) {
                     DropdownMenuItem(
-                        text = { Text("All Playlists") },
+                        text = { Text(stringResource(R.string.playlists_filter_all)) },
                         leadingIcon = { Icon(Icons.Filled.LibraryMusic, contentDescription = null) },
                         trailingIcon = {
                             if (viewSettings.filterMode == PlaylistFilterMode.ALL) {
@@ -147,7 +150,7 @@ fun PlaylistsScreen(
                         onClick = { showFilterMenu = false; viewModel.setFilterMode(PlaylistFilterMode.ALL) }
                     )
                     DropdownMenuItem(
-                        text = { Text("Downloaded") },
+                        text = { Text(stringResource(R.string.playlists_filter_downloaded)) },
                         leadingIcon = { Icon(Icons.Filled.FileDownload, contentDescription = null) },
                         trailingIcon = {
                             if (viewSettings.filterMode == PlaylistFilterMode.DOWNLOADED) {
@@ -159,13 +162,13 @@ fun PlaylistsScreen(
                     if (uniqueOwners.isNotEmpty()) {
                         HorizontalDivider()
                         Text(
-                            text = "Filter by Owner",
+                            text = stringResource(R.string.playlists_filter_by_owner_header),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
                         )
                         DropdownMenuItem(
-                            text = { Text("All Owners") },
+                            text = { Text(stringResource(R.string.playlists_filter_all_owners)) },
                             trailingIcon = {
                                 if (viewSettings.ownerFilter == null) Icon(Icons.Filled.Check, contentDescription = null)
                             },
@@ -189,18 +192,18 @@ fun PlaylistsScreen(
                 }
                 DropdownMenu(expanded = showOverflowMenu, onDismissRequest = { showOverflowMenu = false }) {
                     DropdownMenuItem(
-                        text = { Text("New Playlist") },
+                        text = { Text(stringResource(R.string.playlists_new_playlist)) },
                         leadingIcon = { Icon(Icons.Filled.Add, contentDescription = null) },
                         onClick = { showOverflowMenu = false; showCreateSheet = true }
                     )
                     DropdownMenuItem(
-                        text = { Text("Playlist Import") },
+                        text = { Text(stringResource(R.string.playlists_playlist_import_menu_item)) },
                         leadingIcon = { Icon(Icons.Filled.FileDownload, contentDescription = null) },
                         onClick = { showOverflowMenu = false; onImportClick() }
                     )
                     HorizontalDivider()
                     DropdownMenuItem(
-                        text = { Text("List View") },
+                        text = { Text(stringResource(R.string.playlists_list_view)) },
                         leadingIcon = { Icon(Icons.AutoMirrored.Filled.ViewList, contentDescription = null) },
                         trailingIcon = {
                             if (viewSettings.viewMode == PlaylistViewMode.LIST) {
@@ -210,7 +213,7 @@ fun PlaylistsScreen(
                         onClick = { showOverflowMenu = false; viewModel.setViewMode(PlaylistViewMode.LIST) }
                     )
                     DropdownMenuItem(
-                        text = { Text("Grid View") },
+                        text = { Text(stringResource(R.string.playlists_grid_view)) },
                         leadingIcon = { Icon(Icons.Filled.GridView, contentDescription = null) },
                         trailingIcon = {
                             if (viewSettings.viewMode == PlaylistViewMode.GRID) {
@@ -242,7 +245,7 @@ fun PlaylistsScreen(
         OutlinedTextField(
             value = searchText,
             onValueChange = { searchText = it },
-            placeholder = { Text("Search") },
+            placeholder = { Text(stringResource(R.string.playlists_search_placeholder)) },
             leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
             singleLine = true,
             modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 4.dp)
@@ -251,7 +254,7 @@ fun PlaylistsScreen(
         if (playlists.isEmpty() && !showLikedSongsRow) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Text(
-                    text = "No playlists yet.\nCreate one from the menu above.",
+                    text = stringResource(R.string.playlists_empty_state),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = androidx.compose.ui.text.style.TextAlign.Center
@@ -280,7 +283,7 @@ fun PlaylistsScreen(
                     serverGroups.forEach { group ->
                         val serverLabel = group.server.name.ifBlank { group.server.host }
                         if (group.mine.isNotEmpty()) {
-                            item { SectionHeader("$serverLabel – My Playlists") }
+                            item { SectionHeader(stringResource(R.string.playlists_section_server_my, serverLabel)) }
                             items(group.mine, key = { it.id }) { playlist ->
                                 PlaylistRow(
                                     playlist = playlist,
@@ -295,7 +298,7 @@ fun PlaylistsScreen(
                             }
                         }
                         if (group.shared.isNotEmpty()) {
-                            item { SectionHeader("$serverLabel – Shared Playlists") }
+                            item { SectionHeader(stringResource(R.string.playlists_section_server_shared, serverLabel)) }
                             items(group.shared, key = { it.id }) { playlist ->
                                 PlaylistRow(
                                     playlist = playlist,
@@ -312,7 +315,7 @@ fun PlaylistsScreen(
                     }
                 } else {
                     if (mine.isNotEmpty()) {
-                        item { SectionHeader("My Playlists") }
+                        item { SectionHeader(stringResource(R.string.playlists_section_my)) }
                         items(mine, key = { it.id }) { playlist ->
                             PlaylistRow(
                                 playlist = playlist,
@@ -327,7 +330,7 @@ fun PlaylistsScreen(
                         }
                     }
                     if (shared.isNotEmpty()) {
-                        item { SectionHeader("Shared Playlists") }
+                        item { SectionHeader(stringResource(R.string.playlists_section_shared)) }
                         items(shared, key = { it.id }) { playlist ->
                             PlaylistRow(
                                 playlist = playlist,
@@ -379,15 +382,15 @@ fun PlaylistsScreen(
     deleteTarget?.let { playlist ->
         AlertDialog(
             onDismissRequest = { deleteTarget = null },
-            title = { Text("Delete \"${playlist.name}\"?") },
-            text = { Text("This can't be undone.") },
+            title = { Text(stringResource(R.string.playlists_delete_dialog_title, playlist.name)) },
+            text = { Text(stringResource(R.string.playlists_delete_dialog_text)) },
             confirmButton = {
                 TextButton(onClick = { viewModel.deletePlaylist(playlist); deleteTarget = null }) {
-                    Text("Delete", color = MaterialTheme.colorScheme.error)
+                    Text(stringResource(R.string.playlists_delete_confirm), color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {
-                TextButton(onClick = { deleteTarget = null }) { Text("Cancel") }
+                TextButton(onClick = { deleteTarget = null }) { Text(stringResource(R.string.playlists_cancel)) }
             }
         )
     }
@@ -430,7 +433,7 @@ private fun LikedSongsRow(onClick: () -> Unit) {
         ) {
             Icon(Icons.Filled.Favorite, contentDescription = null, tint = Color.White, modifier = Modifier.size(24.dp))
         }
-        Text(text = "Liked Songs", style = MaterialTheme.typography.bodyLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Text(text = stringResource(R.string.playlists_liked_songs_row_title), style = MaterialTheme.typography.bodyLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
     }
 }
 
@@ -486,9 +489,17 @@ private fun PlaylistRow(
                 }
                 Text(text = playlist.name, style = MaterialTheme.typography.bodyLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
-            val caption = buildString {
-                append("${playlist.songCount} Songs • ${formatPlaylistDuration(playlist.duration)}")
-                if (showOwner && playlist.owner != null) append(" • ${playlist.owner}")
+            val durationHourMinFormat = stringResource(R.string.playlists_duration_hr_min)
+            val durationMinOnlyFormat = stringResource(R.string.playlists_duration_min_only)
+            val songCountDuration = stringResource(
+                R.string.playlists_song_count_duration,
+                playlist.songCount,
+                formatPlaylistDuration(playlist.duration, durationHourMinFormat, durationMinOnlyFormat)
+            )
+            val caption = if (showOwner && playlist.owner != null) {
+                songCountDuration + stringResource(R.string.playlists_caption_owner_suffix, playlist.owner)
+            } else {
+                songCountDuration
             }
             Text(
                 text = caption,
@@ -504,15 +515,15 @@ private fun PlaylistRow(
             }
             DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
                 DropdownMenuItem(
-                    text = { Text(if (playlist.isPinned) "Unpin" else "Pin") },
+                    text = { Text(if (playlist.isPinned) stringResource(R.string.playlists_unpin) else stringResource(R.string.playlists_pin)) },
                     leadingIcon = { Icon(if (playlist.isPinned) Icons.Filled.PushPin else Icons.Outlined.PushPin, contentDescription = null) },
                     onClick = { showMenu = false; onTogglePin() }
                 )
                 if (onRename != null) {
-                    DropdownMenuItem(text = { Text("Rename") }, onClick = { showMenu = false; onRename() })
+                    DropdownMenuItem(text = { Text(stringResource(R.string.playlists_rename)) }, onClick = { showMenu = false; onRename() })
                 }
                 if (onDelete != null) {
-                    DropdownMenuItem(text = { Text("Delete") }, onClick = { showMenu = false; onDelete() })
+                    DropdownMenuItem(text = { Text(stringResource(R.string.playlists_delete_action)) }, onClick = { showMenu = false; onDelete() })
                 }
             }
         }
@@ -547,7 +558,7 @@ private fun PlaylistGridContent(
             serverGroups.forEach { group ->
                 val serverLabel = group.server.name.ifBlank { group.server.host }
                 if (group.mine.isNotEmpty()) {
-                    item(span = { GridItemSpan(maxLineSpan) }) { SectionHeader("$serverLabel – My Playlists") }
+                    item(span = { GridItemSpan(maxLineSpan) }) { SectionHeader(stringResource(R.string.playlists_section_server_my, serverLabel)) }
                     gridItems(group.mine, key = { it.id }) { playlist ->
                         PlaylistGridItem(
                             playlist = playlist,
@@ -561,7 +572,7 @@ private fun PlaylistGridContent(
                     }
                 }
                 if (group.shared.isNotEmpty()) {
-                    item(span = { GridItemSpan(maxLineSpan) }) { SectionHeader("$serverLabel – Shared Playlists") }
+                    item(span = { GridItemSpan(maxLineSpan) }) { SectionHeader(stringResource(R.string.playlists_section_server_shared, serverLabel)) }
                     gridItems(group.shared, key = { it.id }) { playlist ->
                         PlaylistGridItem(
                             playlist = playlist,
@@ -577,7 +588,7 @@ private fun PlaylistGridContent(
             }
         } else {
             if (mine.isNotEmpty()) {
-                item(span = { GridItemSpan(maxLineSpan) }) { SectionHeader("My Playlists") }
+                item(span = { GridItemSpan(maxLineSpan) }) { SectionHeader(stringResource(R.string.playlists_section_my)) }
                 gridItems(mine, key = { it.id }) { playlist ->
                     PlaylistGridItem(
                         playlist = playlist,
@@ -591,7 +602,7 @@ private fun PlaylistGridContent(
                 }
             }
             if (shared.isNotEmpty()) {
-                item(span = { GridItemSpan(maxLineSpan) }) { SectionHeader("Shared Playlists") }
+                item(span = { GridItemSpan(maxLineSpan) }) { SectionHeader(stringResource(R.string.playlists_section_shared)) }
                 gridItems(shared, key = { it.id }) { playlist ->
                     PlaylistGridItem(
                         playlist = playlist,
@@ -653,15 +664,15 @@ private fun PlaylistGridItem(
             }
             DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
                 DropdownMenuItem(
-                    text = { Text(if (playlist.isPinned) "Unpin" else "Pin") },
+                    text = { Text(if (playlist.isPinned) stringResource(R.string.playlists_unpin) else stringResource(R.string.playlists_pin)) },
                     leadingIcon = { Icon(if (playlist.isPinned) Icons.Filled.PushPin else Icons.Outlined.PushPin, contentDescription = null) },
                     onClick = { showMenu = false; onTogglePin() }
                 )
                 if (onRename != null) {
-                    DropdownMenuItem(text = { Text("Rename") }, onClick = { showMenu = false; onRename() })
+                    DropdownMenuItem(text = { Text(stringResource(R.string.playlists_rename)) }, onClick = { showMenu = false; onRename() })
                 }
                 if (onDelete != null) {
-                    DropdownMenuItem(text = { Text("Delete") }, onClick = { showMenu = false; onDelete() })
+                    DropdownMenuItem(text = { Text(stringResource(R.string.playlists_delete_action)) }, onClick = { showMenu = false; onDelete() })
                 }
             }
         }
@@ -672,7 +683,7 @@ private fun PlaylistGridItem(
             overflow = TextOverflow.Ellipsis
         )
         Text(
-            text = "${playlist.songCount} Songs",
+            text = stringResource(R.string.playlists_song_count_only, playlist.songCount),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 1,
@@ -681,9 +692,9 @@ private fun PlaylistGridItem(
     }
 }
 
-private fun formatPlaylistDuration(totalSeconds: Int): String {
+private fun formatPlaylistDuration(totalSeconds: Int, hourMinFormat: String, minOnlyFormat: String): String {
     val totalMinutes = (totalSeconds / 60).coerceAtLeast(if (totalSeconds > 0) 1 else 0)
     val hours = totalMinutes / 60
     val minutes = totalMinutes % 60
-    return if (hours > 0) "$hours hr $minutes min" else "$minutes min"
+    return if (hours > 0) hourMinFormat.format(hours, minutes) else minOnlyFormat.format(minutes)
 }

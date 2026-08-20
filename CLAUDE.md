@@ -64,11 +64,19 @@ entries, not a string that's fine to leave as-is because it was already there.
   though the argument order itself must stay fixed.
 - Keep XML escapes intact (`\'`, `\"`, `\n`, `&amp;`, `&#8230;`) — translate the
   surrounding text, not the escape sequence itself.
-- Use `<plurals>` resources instead of manual singular/plural string concatenation for
-  any count-based string where the target language's plural rules differ from
-  English's (many of the 23 languages have more than the two English plural forms) —
-  don't just translate the English "1 item" / "N items" split verbatim into a language
-  with 3+ plural categories.
+- **Never use `<plurals>` resources** — every entry in every `values*/strings.xml` file
+  in this project is a plain `<string name="...">`, including count-based strings. Android
+  requires a resource name to have the *same* type (`<string>` vs `<plurals>`) across
+  every locale variant of a file, with the default `values/strings.xml`'s type as
+  authoritative; since the default file only ever declares plain `<string>`, introducing
+  a `<plurals>` for the same name in one locale file causes AAPT2 to silently drop that
+  resource at build time (a warning, not a hard error — easy to miss) rather than use the
+  translation. This was hit for real during the initial 22-language translation pass and
+  cost a wasted redo, so it's a hard rule, not a style preference. For a count-based
+  string where the target language's plural rules genuinely don't map cleanly onto the
+  English "1 item" / "N items" split, rephrase the sentence to sidestep the mismatch
+  (e.g. lead with the number rather than inflecting the noun) instead of reaching for
+  `<plurals>`.
 - XML comments can stay in English — they're for developers navigating the file, not
   shown to users.
 

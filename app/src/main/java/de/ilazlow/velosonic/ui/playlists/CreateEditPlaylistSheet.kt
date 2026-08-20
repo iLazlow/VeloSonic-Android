@@ -45,8 +45,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
+import de.ilazlow.velosonic.R
 import de.ilazlow.velosonic.data.db.ServerConfigEntity
 import de.ilazlow.velosonic.data.playlist.SPCriteria
 import de.ilazlow.velosonic.domain.isNavidrome
@@ -137,9 +139,9 @@ fun CreateEditPlaylistSheet(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                TextButton(onClick = onDismiss) { Text("Cancel") }
+                TextButton(onClick = onDismiss) { Text(stringResource(R.string.create_edit_playlist_cancel)) }
                 Text(
-                    text = if (isEdit) "Edit Playlist" else "New Playlist",
+                    text = if (isEdit) stringResource(R.string.create_edit_playlist_title_edit) else stringResource(R.string.create_edit_playlist_title_new),
                     style = MaterialTheme.typography.titleMedium,
                     modifier = Modifier.weight(1f),
                     textAlign = androidx.compose.ui.text.style.TextAlign.Center
@@ -158,20 +160,20 @@ fun CreateEditPlaylistSheet(
                     enabled = name.isNotBlank() && (isEdit || selectedHost.isNotBlank()) &&
                         !(isEdit && effectiveIsSmart && (rulesLoading || rulesLoadFailed))
                 ) {
-                    Text(if (isEdit) "Save" else "Create")
+                    Text(if (isEdit) stringResource(R.string.create_edit_playlist_save) else stringResource(R.string.create_edit_playlist_create))
                 }
             }
             Spacer(modifier = Modifier.height(8.dp))
             OutlinedTextField(
                 value = name,
                 onValueChange = { name = it },
-                label = { Text("Name") },
+                label = { Text(stringResource(R.string.create_edit_playlist_name_label)) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
             )
             if (!isEdit && configs.size > 1) {
                 Spacer(modifier = Modifier.height(12.dp))
-                Text("Server", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(stringResource(R.string.create_edit_playlist_server_label), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 configs.forEach { config ->
                     Row(
                         modifier = Modifier
@@ -191,7 +193,7 @@ fun CreateEditPlaylistSheet(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("Public", style = MaterialTheme.typography.bodyLarge)
+                Text(stringResource(R.string.create_edit_playlist_public_label), style = MaterialTheme.typography.bodyLarge)
                 Switch(checked = isPublic, onCheckedChange = { isPublic = it })
             }
 
@@ -202,7 +204,7 @@ fun CreateEditPlaylistSheet(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text("Smart Playlist", style = MaterialTheme.typography.bodyLarge)
+                        Text(stringResource(R.string.create_edit_playlist_smart_playlist_label), style = MaterialTheme.typography.bodyLarge)
                         Switch(checked = createIsSmartPlaylist, onCheckedChange = { createIsSmartPlaylist = it })
                     }
                 }
@@ -215,7 +217,7 @@ fun CreateEditPlaylistSheet(
                         Spacer(modifier = Modifier.height(16.dp))
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                             CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
-                            Text("Loading rules…", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(stringResource(R.string.create_edit_playlist_loading_rules), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
                     rulesLoadFailed -> {
@@ -223,12 +225,12 @@ fun CreateEditPlaylistSheet(
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                             Icon(Icons.Filled.WarningAmber, contentDescription = null, tint = MaterialTheme.colorScheme.error)
                             Text(
-                                "Failed to load rules",
+                                stringResource(R.string.create_edit_playlist_failed_to_load_rules),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.weight(1f)
                             )
-                            TextButton(onClick = { retryToken++ }) { Text("Retry") }
+                            TextButton(onClick = { retryToken++ }) { Text(stringResource(R.string.create_edit_playlist_retry)) }
                         }
                     }
                     else -> SmartPlaylistEditorSection(criteria = criteria, onCriteriaChange = { criteria = it })
@@ -261,7 +263,7 @@ fun CreateEditPlaylistSheet(
                         }
                     }
                     Text(
-                        text = if (pickedCoverUri != null) "New cover selected" else "Change Cover",
+                        text = if (pickedCoverUri != null) stringResource(R.string.create_edit_playlist_new_cover_selected) else stringResource(R.string.create_edit_playlist_change_cover),
                         style = MaterialTheme.typography.bodyLarge,
                         modifier = Modifier.weight(1f)
                     )

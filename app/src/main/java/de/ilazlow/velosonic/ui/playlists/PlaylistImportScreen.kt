@@ -48,11 +48,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import de.ilazlow.velosonic.R
 import de.ilazlow.velosonic.data.db.ServerConfigEntity
 import de.ilazlow.velosonic.data.network.dto.PlaylistDto
 import de.ilazlow.velosonic.data.network.dto.TrackDto
@@ -96,7 +98,7 @@ fun PlaylistImportScreen(onBack: () -> Unit, viewModel: PlaylistImportViewModel 
     val canImport = phase == ImportPhase.ReadyToImport && selectedServerHost != null && matchedCount > 0
 
     Column(modifier = Modifier.fillMaxWidth()) {
-        SettingsTopBar(title = "Playlist Import", onBack = onBack)
+        SettingsTopBar(title = stringResource(R.string.playlist_import_title), onBack = onBack)
         LazyColumn(
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(20.dp)
@@ -205,7 +207,7 @@ private fun UrlSection(
     onPickCsv: () -> Unit,
     onLoad: () -> Unit
 ) {
-    SectionCard(title = "Playlist URL") {
+    SectionCard(title = stringResource(R.string.playlist_import_section_url)) {
         if (pendingCsvFilename != null) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -215,17 +217,17 @@ private fun UrlSection(
                 Icon(Icons.Filled.Description, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                 Column(modifier = Modifier.weight(1f)) {
                     Text(pendingCsvFilename, style = MaterialTheme.typography.bodyLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    Text("Exportify CSV", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.playlist_import_exportify_csv_label), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 IconButton(onClick = onClearCsv, enabled = enabled) {
-                    Icon(Icons.Filled.Cancel, contentDescription = "Remove file")
+                    Icon(Icons.Filled.Cancel, contentDescription = stringResource(R.string.playlist_import_remove_file_content_description))
                 }
             }
         } else {
             OutlinedTextField(
                 value = urlText,
                 onValueChange = onUrlTextChange,
-                placeholder = { Text("Spotify or other URL") },
+                placeholder = { Text(stringResource(R.string.playlist_import_url_placeholder)) },
                 singleLine = true,
                 enabled = enabled,
                 modifier = Modifier.fillMaxWidth()
@@ -245,8 +247,8 @@ private fun UrlSection(
                 }
             }
             Row(modifier = Modifier.padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                IconLabelButton(Icons.Filled.ContentPaste, "Paste", onPaste, enabled)
-                IconLabelButton(Icons.Filled.Clear, "Clear", onClear, enabled && urlText.isNotEmpty())
+                IconLabelButton(Icons.Filled.ContentPaste, stringResource(R.string.playlist_import_paste), onPaste, enabled)
+                IconLabelButton(Icons.Filled.Clear, stringResource(R.string.playlist_import_clear), onClear, enabled && urlText.isNotEmpty())
             }
         }
 
@@ -254,7 +256,7 @@ private fun UrlSection(
 
         IconLabelButton(
             icon = Icons.Filled.UploadFile,
-            label = if (pendingCsvFilename != null) "Other CSV File…" else "Import CSV File (Exportify)",
+            label = if (pendingCsvFilename != null) stringResource(R.string.playlist_import_other_csv_file) else stringResource(R.string.playlist_import_import_csv_file),
             onClick = onPickCsv,
             enabled = enabled,
             modifier = Modifier.fillMaxWidth()
@@ -265,7 +267,14 @@ private fun UrlSection(
                 if (isLoadingPhase(phase)) {
                     CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
                 }
-                Text(loadButtonLabel(phase))
+                Text(
+                    loadButtonLabel(
+                        phase,
+                        stringResource(R.string.playlist_import_loading),
+                        stringResource(R.string.playlist_import_matching_tracks),
+                        stringResource(R.string.playlist_import_load_playlist)
+                    )
+                )
             }
         }
 
@@ -289,23 +298,22 @@ private fun UrlSection(
 
 private fun isLoadingPhase(phase: ImportPhase) = phase is ImportPhase.LoadingPlaylist || phase is ImportPhase.MatchingTracks
 
-private fun loadButtonLabel(phase: ImportPhase): String = when (phase) {
-    is ImportPhase.LoadingPlaylist -> "Loading…"
-    is ImportPhase.MatchingTracks -> "Matching tracks…"
-    else -> "Load Playlist"
+private fun loadButtonLabel(phase: ImportPhase, loadingLabel: String, matchingTracksLabel: String, loadPlaylistLabel: String): String = when (phase) {
+    is ImportPhase.LoadingPlaylist -> loadingLabel
+    is ImportPhase.MatchingTracks -> matchingTracksLabel
+    else -> loadPlaylistLabel
 }
 
 @Composable
 private fun SourcePreviewSection(info: ImportPlaylistInfo, matchResults: List<ImportTrackMatch>, unmatchedCount: Int) {
-    SectionCard(title = "Source Playlist") {
+    SectionCard(title = stringResource(R.string.playlist_import_section_source_playlist)) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             CoverArtTile(url = info.artworkUrl, contentDescription = info.name, modifier = Modifier.size(44.dp).clip(RoundedCornerShape(6.dp)))
             Column(modifier = Modifier.weight(1f)) {
                 Text(info.name, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                val caption = buildString {
-                    append("${info.totalTracks} tracks")
-                    if (unmatchedCount > 0) append(" • $unmatchedCount not found")
-                }
+                val tracksCountText = stringResource(R.string.playlist_import_tracks_count, info.totalTracks)
+                val notFoundSuffix = if (unmatchedCount > 0) stringResource(R.string.playlist_import_not_found_suffix, unmatchedCount) else null
+                val caption = tracksCountText + (notFoundSuffix ?: "")
                 Text(
                     caption,
                     style = MaterialTheme.typography.bodySmall,
@@ -342,7 +350,7 @@ private fun SourcePreviewSection(info: ImportPlaylistInfo, matchResults: List<Im
                         if (!match.isMatched) {
                             Icon(
                                 Icons.Filled.Cancel,
-                                contentDescription = "Not found",
+                                contentDescription = stringResource(R.string.playlist_import_not_found_content_description),
                                 tint = MaterialTheme.colorScheme.error.copy(alpha = 0.7f),
                                 modifier = Modifier.size(18.dp)
                             )
@@ -356,7 +364,7 @@ private fun SourcePreviewSection(info: ImportPlaylistInfo, matchResults: List<Im
 
 @Composable
 private fun ExistingPlaylistSection(existing: PlaylistDto, serverHost: String?, coverArtUrl: (String, String?, Int) -> String?) {
-    SectionCard(title = "Existing Playlist on Server") {
+    SectionCard(title = stringResource(R.string.playlist_import_section_existing_playlist)) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             Box(
                 modifier = Modifier.size(44.dp).clip(RoundedCornerShape(6.dp)).background(MaterialTheme.colorScheme.surface),
@@ -366,13 +374,13 @@ private fun ExistingPlaylistSection(existing: PlaylistDto, serverHost: String?, 
             }
             Column(modifier = Modifier.weight(1f)) {
                 Text(existing.name, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                Text("Will be updated (ID preserved)", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.tertiary)
+                Text(stringResource(R.string.playlist_import_existing_will_be_updated), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.tertiary)
             }
         }
         val entries = existing.entry.orEmpty()
         if (entries.isEmpty()) {
             Text(
-                "No tracks yet",
+                stringResource(R.string.playlist_import_no_tracks_yet),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(top = 12.dp)
@@ -405,10 +413,10 @@ private fun ServerPickerSection(
 ) {
     var expanded by remember { mutableStateOf(false) }
     val selected = servers.firstOrNull { it.host == selectedHost }
-    SectionCard(title = "Target Server") {
+    SectionCard(title = stringResource(R.string.playlist_import_section_target_server)) {
         Box {
             OutlinedButton(onClick = { if (enabled) expanded = true }, enabled = enabled, modifier = Modifier.fillMaxWidth()) {
-                Text(selected?.name?.ifBlank { selected.host } ?: "Select a server", modifier = Modifier.weight(1f))
+                Text(selected?.name?.ifBlank { selected.host } ?: stringResource(R.string.playlist_import_select_a_server), modifier = Modifier.weight(1f))
                 Icon(Icons.Filled.ArrowDropDown, contentDescription = null)
             }
             DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
@@ -432,19 +440,19 @@ private fun ImportSection(
     onStartImport: () -> Unit,
     onClose: () -> Unit
 ) {
-    SectionCard(title = "Import") {
+    SectionCard(title = stringResource(R.string.playlist_import_section_import)) {
         Button(onClick = onStartImport, enabled = canImport, modifier = Modifier.fillMaxWidth()) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 when (phase) {
                     is ImportPhase.Importing -> {
                         CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
-                        Text("Importing…")
+                        Text(stringResource(R.string.playlist_import_importing))
                     }
                     ImportPhase.Done -> {
                         Icon(Icons.Filled.CheckCircle, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Text("Import Complete")
+                        Text(stringResource(R.string.playlist_import_import_complete))
                     }
-                    else -> Text("Start Import")
+                    else -> Text(stringResource(R.string.playlist_import_start_import))
                 }
             }
         }
@@ -452,19 +460,19 @@ private fun ImportSection(
             Row(modifier = Modifier.fillMaxWidth().padding(top = 12.dp), horizontalArrangement = Arrangement.SpaceBetween) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     Icon(Icons.Filled.CheckCircle, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
-                    Text("$matchedCount matched", style = MaterialTheme.typography.bodySmall)
+                    Text(stringResource(R.string.playlist_import_matched_count, matchedCount), style = MaterialTheme.typography.bodySmall)
                 }
                 if (unmatchedCount > 0) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                         Icon(Icons.Filled.Cancel, contentDescription = null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(16.dp))
-                        Text("$unmatchedCount skipped (not found)", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
+                        Text(stringResource(R.string.playlist_import_skipped_count, unmatchedCount), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
                     }
                 }
             }
         }
         if (phase == ImportPhase.Done) {
             TextButton(onClick = onClose, modifier = Modifier.fillMaxWidth().padding(top = 12.dp)) {
-                Text("Close")
+                Text(stringResource(R.string.playlist_import_close))
             }
         }
     }
