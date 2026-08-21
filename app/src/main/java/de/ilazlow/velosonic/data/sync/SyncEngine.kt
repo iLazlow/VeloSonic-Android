@@ -549,6 +549,18 @@ class SyncEngine @Inject constructor(
 
     // ── Starred / radio / playlists (shared across all three sync tiers) ──────
 
+    /**
+     * `getStarred2` is the ONLY source of truth for what's actually starred — before this fix,
+     * the sync only ever toggled `isStarred` on tracks/albums/artists that some *other* path
+     * (the normal artist→album→track crawl) had already inserted into Room, silently dropping
+     * anything starred that crawl never reached. That's a real gap for some Subsonic-compatible
+     * bridges (confirmed live against a Tidal-via-Subsonic bridge server: `getStarred2` returned
+     * starred songs that never showed up locally at all, since that bridge's own artist/album
+     * listing didn't happen to surface them) — a starred item can exist without ever having gone
+     * through the crawl. `getStarred2`'s own artist/album/song entries carry full metadata (not
+     * just ids), so a starred entity missing from Room is now inserted fresh from that same
+     * response instead of being silently skipped — mirrors the same "server as fallback for an
+     * entity Room doesn't have" fix already applied to Artist/Album Detail's live-search gap. */
     private suspend fun syncStarred(config: ServerConfigEntity) {
         val host = config.host
         val starred = try {
@@ -561,29 +573,51 @@ class SyncEngine @Inject constructor(
         val starredAlbumIds = starred.album.orEmpty().map { it.id }.toSet()
         val starredSongsById = starred.song.orEmpty().associateBy { it.id }
 
-        val artists = artistDao.getAllForServer(host)
-        val changedArtists = artists.filter { (it.subsonicId in starredArtistIds) != it.isStarred }
-        if (changedArtists.isNotEmpty()) {
-            artistDao.upsertAll(changedArtists.map { it.copy(isStarred = !it.isStarred) })
-        }
-
-        val albums = albumDao.getAllForServer(host)
-        val changedAlbums = albums.filter { (it.subsonicId in starredAlbumIds) != it.isStarred }
-        if (changedAlbums.isNotEmpty()) {
-            albumDao.upsertAll(changedAlbums.map { it.copy(isStarred = !it.isStarred) })
-        }
-
-        val tracks = trackDao.getAllForServer(host)
-        val changedTracks = tracks.mapNotNull { track ->
-            val isStarred = track.subsonicId in starredSongsById
-            val starredAt = if (isStarred) parseIso8601ToEpochMillis(starredSongsById[track.subsonicId]?.starred) else null
-            if (isStarred != track.isStarred || starredAt != track.starredAt) {
-                track.copy(isStarred = isStarred, starredAt = starredAt)
-            } else {
-                null
+        val existingArtists = artistDao.getAllForServer(host).associateBy { it.subsonicId }
+        val artistWrites = starred.artist.orEmpty().mapNotNull { dto ->
+            val existing = existingArtists[dto.id]
+            when {
+                existing == null -> dto.toEntity(host).copy(isStarred = true)
+                !existing.isStarred -> existing.copy(isStarred = true)
+                else -> null
             }
         }
-        if (changedTracks.isNotEmpty()) trackDao.upsertAll(changedTracks)
+        val newlyUnstarredArtists = existingArtists.values.filter { it.isStarred && it.subsonicId !in starredArtistIds }
+            .map { it.copy(isStarred = false) }
+        if (artistWrites.isNotEmpty() || newlyUnstarredArtists.isNotEmpty()) {
+            artistDao.upsertAll(artistWrites + newlyUnstarredArtists)
+        }
+
+        val existingAlbums = albumDao.getAllForServer(host).associateBy { it.subsonicId }
+        val albumWrites = starred.album.orEmpty().mapNotNull { dto ->
+            val existing = existingAlbums[dto.id]
+            when {
+                existing == null -> dto.toLightweightEntity(host).copy(isStarred = true)
+                !existing.isStarred -> existing.copy(isStarred = true)
+                else -> null
+            }
+        }
+        val newlyUnstarredAlbums = existingAlbums.values.filter { it.isStarred && it.subsonicId !in starredAlbumIds }
+            .map { it.copy(isStarred = false) }
+        if (albumWrites.isNotEmpty() || newlyUnstarredAlbums.isNotEmpty()) {
+            albumDao.upsertAll(albumWrites + newlyUnstarredAlbums)
+        }
+
+        val existingTracks = trackDao.getAllForServer(host).associateBy { it.subsonicId }
+        val trackWrites = starredSongsById.values.mapNotNull { dto ->
+            val starredAt = parseIso8601ToEpochMillis(dto.starred)
+            val existing = existingTracks[dto.id]
+            when {
+                existing == null -> dto.toStandaloneEntity(host).copy(isStarred = true, starredAt = starredAt)
+                !existing.isStarred || existing.starredAt != starredAt -> existing.copy(isStarred = true, starredAt = starredAt)
+                else -> null
+            }
+        }
+        val newlyUnstarredTracks = existingTracks.values.filter { it.isStarred && it.subsonicId !in starredSongsById.keys }
+            .map { it.copy(isStarred = false, starredAt = null) }
+        if (trackWrites.isNotEmpty() || newlyUnstarredTracks.isNotEmpty()) {
+            trackDao.upsertAll(trackWrites + newlyUnstarredTracks)
+        }
     }
 
     private suspend fun syncRadioStations(config: ServerConfigEntity) {

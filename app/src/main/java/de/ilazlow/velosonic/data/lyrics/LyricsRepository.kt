@@ -246,12 +246,29 @@ class LyricsRepository @Inject constructor(
      *  the same time, not sequentially) — mixing them in would break the "words are chronologically
      *  ordered" assumption the sweep/tap-to-seek both depend on, so only the `role == "main"` layer
      *  (or the first cueLine when there's no agent metadata at all) is kept, same principle as
-     *  [fetchRadiant]'s background-vocal exclusion. */
+     *  [fetchRadiant]'s background-vocal exclusion.
+     *
+     *  Confirmed live against a real (non-Navidrome, OpenSubsonic-compatible "Subtidal" bridge)
+     *  server response: it omits `cueLine.index` entirely on every entry, which silently decodes
+     *  to [CueLineDto.index]'s `Int` default of `0` — filtering by index then only ever matched
+     *  line 0, so every other line fell back to the synthesized per-character sweep (i.e. the
+     *  whole song rendered "line-by-line" instead of word-by-word). When no cueLine actually
+     *  carries a non-zero index, the response isn't populating it at all, so this falls back to
+     *  pairing `cueLine[i]` with `line[i]` by plain array position instead — the same order real
+     *  spec-compliant servers already emit cueLines in anyway, so this fallback is a superset,
+     *  not a special case. */
     private fun wordsForLine(index: Int, structured: StructuredLyricsDto): List<LyricWord>? {
-        val cueLines = structured.cueLine.orEmpty().filter { it.index == index }
-        if (cueLines.isEmpty()) return null
-        val agentsById = structured.agents.orEmpty().associateBy { it.id }
-        val chosen = cueLines.firstOrNull { agentsById[it.agentId]?.role == "main" } ?: cueLines.first()
+        val allCueLines = structured.cueLine.orEmpty()
+        if (allCueLines.isEmpty()) return null
+        val chosen = if (allCueLines.any { it.index != 0 }) {
+            val cueLines = allCueLines.filter { it.index == index }
+            if (cueLines.isEmpty()) return null
+            val agentsById = structured.agents.orEmpty().associateBy { it.id }
+            cueLines.firstOrNull { agentsById[it.agentId]?.role == "main" } ?: cueLines.first()
+        } else {
+            if (allCueLines.size != structured.line.orEmpty().size) return null
+            allCueLines.getOrNull(index) ?: return null
+        }
         val cues = chosen.cue.orEmpty()
         if (cues.isEmpty()) return null
         return cues.mapIndexed { i, cue ->
