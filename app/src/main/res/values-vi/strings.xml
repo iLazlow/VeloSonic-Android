@@ -46,6 +46,7 @@
     <string name="home_server_filter_combined">Tất cả máy chủ</string>
     <string name="status_offline_mode">Chế độ ngoại tuyến</string>
     <string name="status_no_network">Không có mạng</string>
+    <string name="status_sync_failed">Đồng bộ thất bại</string>
 
     <string name="common_coming_soon">Sắp ra mắt</string>
 

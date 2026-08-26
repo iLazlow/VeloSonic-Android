@@ -1,8 +1,11 @@
 package de.ilazlow.velosonic.playback
 
+import android.app.PendingIntent
 import android.content.Context
+import android.content.Intent
 import android.net.Uri
 import android.util.Log
+import de.ilazlow.velosonic.MainActivity
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
@@ -256,8 +259,24 @@ class PlaybackEngine(
         return cache.getCachedSpans(key).isNotEmpty()
     }
 
+    /** Tapping the media notification's body (not the transport buttons) launches this — without
+     *  it, Media3's default notification has no content intent at all and tapping it does
+     *  nothing. `FLAG_ACTIVITY_NEW_TASK` is required since this fires from outside any Activity
+     *  context (the notification/system triggers it, not an Activity); `FLAG_ACTIVITY_SINGLE_TOP`
+     *  plus the manifest's own `launchMode="singleTop"` on MainActivity keep this from spawning a
+     *  duplicate instance if it's already running. */
+    private val sessionActivityPendingIntent: PendingIntent = PendingIntent.getActivity(
+        context,
+        0,
+        Intent(context, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
+        },
+        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+    )
+
     val mediaSession: MediaSession = MediaSession.Builder(context, player)
         .setCallback(object : MediaSession.Callback {})
+        .setSessionActivity(sessionActivityPendingIntent)
         .build()
 
     private val _nowPlaying = MutableStateFlow(NowPlaying())

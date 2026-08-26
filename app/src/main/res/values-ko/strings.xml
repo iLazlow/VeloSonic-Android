@@ -46,6 +46,7 @@
     <string name="home_server_filter_combined">모든 서버</string>
     <string name="status_offline_mode">오프라인 모드</string>
     <string name="status_no_network">네트워크 없음</string>
+    <string name="status_sync_failed">동기화 실패</string>
 
     <string name="common_coming_soon">곧 제공 예정</string>
 

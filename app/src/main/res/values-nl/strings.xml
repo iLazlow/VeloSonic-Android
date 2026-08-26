@@ -46,6 +46,7 @@
     <string name="home_server_filter_combined">Alle servers</string>
     <string name="status_offline_mode">Offlinemodus</string>
     <string name="status_no_network">Geen netwerk</string>
+    <string name="status_sync_failed">Synchronisatie mislukt</string>
 
     <string name="common_coming_soon">Binnenkort beschikbaar</string>
 

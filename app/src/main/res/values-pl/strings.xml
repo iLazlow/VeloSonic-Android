@@ -46,6 +46,7 @@
     <string name="home_server_filter_combined">Wszystkie serwery</string>
     <string name="status_offline_mode">Tryb offline</string>
     <string name="status_no_network">Brak sieci</string>
+    <string name="status_sync_failed">Synchronizacja nie powiodła się</string>
 
     <string name="common_coming_soon">Już wkrótce</string>
 

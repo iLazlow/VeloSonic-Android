@@ -46,6 +46,7 @@
     <string name="home_server_filter_combined">All Servers</string>
     <string name="status_offline_mode">Offline Mode</string>
     <string name="status_no_network">No Network</string>
+    <string name="status_sync_failed">Sync failed</string>
 
     <string name="common_coming_soon">Coming soon</string>
 

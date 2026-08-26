@@ -46,6 +46,7 @@
     <string name="home_server_filter_combined">Všechny servery</string>
     <string name="status_offline_mode">Režim offline</string>
     <string name="status_no_network">Bez připojení</string>
+    <string name="status_sync_failed">Synchronizace se nezdařila</string>
 
     <string name="common_coming_soon">Již brzy</string>
 

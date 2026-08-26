@@ -60,6 +60,11 @@ private const val TAG = "SyncEngine"
 private const val THREE_HOURS_MS = 3 * 60 * 60 * 1000L
 private const val ALBUM_COVERAGE_THRESHOLD = 0.75
 private const val CONCURRENCY = 10
+/** Batch size for [SyncEngine]'s incremental initial-sync writes — small enough that real data
+ *  shows up in the UI every few seconds on a typical connection, large enough that Room isn't
+ *  hit with a flood of tiny transactions (each chunk is still fetched with [CONCURRENCY]-wide
+ *  parallelism internally, so this doesn't throttle network throughput, only write frequency). */
+private const val INCREMENTAL_SYNC_CHUNK_SIZE = 150
 
 /**
  * Ports SyncManager.swift's three-tier sync strategy: a first-time [performInitialSync], a
@@ -121,7 +126,7 @@ class SyncEngine @Inject constructor(
                 return
             }
             _state.update { it.copy(serverProgressLabel = config.name.ifBlank { config.host }) }
-            syncFullLibrary(config, wipeFirst = false)
+            syncInitialLibraryIncrementally(config)
         } catch (e: Exception) {
             log("[$host] performInitialSync failed", e)
             _state.update { it.copy(hasFailed = true) }
@@ -232,6 +237,103 @@ class SyncEngine @Inject constructor(
         updateProgress(1.0, "Library ready")
     }
 
+    /**
+     * Incremental counterpart to [syncFullLibrary] for a server with nothing local yet
+     * ([performInitialSync], and the "brand new second server discovered mid partial-sync" case
+     * in [performPartialSync]) — writes artists/albums/tracks to Room in chunks as they're
+     * fetched instead of holding everything in memory for one giant transaction at the end. Safe
+     * specifically because there's no wipe to defer/protect here (the tables start empty for this
+     * host): a crash or aborted fetch at any point just leaves a partial-but-consistent library,
+     * picked up again by the next sync attempt — unlike [syncFullLibrary]'s wipeFirst=true path,
+     * which genuinely needs the fetch-everything-then-atomic-write ordering to avoid emptying an
+     * already-populated library on a failed resync (see that function's own doc comment) — that
+     * path is untouched, still used only by [performFullResync].
+     *
+     * The whole reason this exists: [de.ilazlow.velosonic.ui.AppRootViewModel] no longer gates
+     * the app's UI behind [de.ilazlow.velosonic.data.db.SyncMetadataEntity.isInitialSyncComplete]
+     * — a user lands straight in [de.ilazlow.velosonic.ui.AppShell] on a brand new server, and
+     * needs to see their library actually fill in underneath them (a "Syncing…" banner covers the
+     * rest, see [de.ilazlow.velosonic.ui.common.LibrarySyncStatusBanner]) rather than either a
+     * blocking full-screen spinner or — if the old atomic write were kept as-is with the blocking
+     * screen simply removed — an empty library that jumps from nothing to everything in one
+     * instant at the very end.
+     */
+    private suspend fun syncInitialLibraryIncrementally(config: ServerConfigEntity) {
+        val host = config.host
+        val t0 = System.currentTimeMillis()
+        fun mark(msg: String) = log("[$host] +${System.currentTimeMillis() - t0}ms $msg")
+
+        updateProgress(0.05, "Loading artists...")
+        val allArtists = fetchAllArtists(config)
+        if (allArtists.isNotEmpty()) artistDao.upsertAll(allArtists.map { it.toEntity(host) })
+        mark("fetched+wrote ${allArtists.size} artists")
+        updateProgress(0.15, "${allArtists.size} artists")
+
+        if (allArtists.isEmpty()) {
+            syncMetadataDao.upsert(
+                SyncMetadataEntity(key = host, lastSyncDate = System.currentTimeMillis(), isInitialSyncComplete = true)
+            )
+            updateProgress(1.0, "Library ready")
+            return
+        }
+
+        // Chunked rather than one fetchAlbumsForArtists call over the whole artist list — a large
+        // library would otherwise leave Albums empty for this entire phase (which, for thousands
+        // of artists, is most of the sync). Writing after each chunk instead of only at the very
+        // end is what actually gives the "zwischenstand" the app is dropping the user into: real
+        // rows appearing every INCREMENTAL_SYNC_CHUNK_SIZE artists rather than one all-or-nothing
+        // jump. seenAlbumIds dedups across chunks (not just within one, unlike
+        // fetchAlbumsForArtists's own internal dedup) — a compilation album credited to two
+        // artists in two different chunks would otherwise come back twice.
+        val allAlbums = mutableListOf<AlbumDto>()
+        val seenAlbumIds = HashSet<String>()
+        var artistsCompleted = 0
+        for (artistChunk in allArtists.chunked(INCREMENTAL_SYNC_CHUNK_SIZE)) {
+            val chunkAlbums = fetchAlbumsForArtists(config, artistChunk)
+            val newAlbums = chunkAlbums.filter { seenAlbumIds.add(compositeId(host, it.id)) }
+            if (newAlbums.isNotEmpty()) {
+                albumDao.upsertAll(newAlbums.map { it.toLightweightEntity(host) })
+                allAlbums += newAlbums
+            }
+            artistsCompleted += artistChunk.size
+            updateProgress(
+                0.15 + (artistsCompleted.toDouble() / allArtists.size) * 0.25,
+                "Loading albums... $artistsCompleted/${allArtists.size} artists"
+            )
+        }
+        mark("fetched+wrote ${allAlbums.size} albums")
+
+        // Same chunking for track/album-detail fetches — the heaviest phase per item (a full
+        // getAlbum + song list each), so this is where progressive writes matter most.
+        if (allAlbums.isNotEmpty()) {
+            var albumsCompleted = 0
+            for (albumChunk in allAlbums.chunked(INCREMENTAL_SYNC_CHUNK_SIZE)) {
+                applyTrackFetchResult(host, fetchAlbumDetails(config, albumChunk))
+                albumsCompleted += albumChunk.size
+                updateProgress(
+                    0.4 + (albumsCompleted.toDouble() / allAlbums.size) * 0.4,
+                    "Loading songs... $albumsCompleted/${allAlbums.size} albums"
+                )
+            }
+        }
+        mark("fetched+wrote tracks")
+
+        updateProgress(0.85, "Loading playlists...")
+        syncPlaylistsForHost(config, emptyMap())
+        mark("synced playlists")
+
+        syncStarred(config)
+        mark("synced starred")
+        syncRadioStations(config)
+        mark("synced radio stations")
+
+        syncMetadataDao.upsert(
+            SyncMetadataEntity(key = host, lastSyncDate = System.currentTimeMillis(), isInitialSyncComplete = true)
+        )
+        mark("wrote sync metadata — DONE")
+        updateProgress(1.0, "Library ready")
+    }
+
     // ── Partial sync (periodic, incremental — no wipe) ─────────────────────────
 
     /** Wipes every cached-library row for [host] — used when a server is removed entirely
@@ -295,7 +397,7 @@ class SyncEngine @Inject constructor(
             val allArtists = fetchAllArtists(config)
 
             if (isNewServer && allArtists.isNotEmpty()) {
-                syncFullLibrary(config, wipeFirst = false)
+                syncInitialLibraryIncrementally(config)
                 return
             }
 

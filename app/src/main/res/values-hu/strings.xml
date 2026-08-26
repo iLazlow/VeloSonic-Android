@@ -46,6 +46,7 @@
     <string name="home_server_filter_combined">Minden szerver</string>
     <string name="status_offline_mode">Offline mód</string>
     <string name="status_no_network">Nincs hálózat</string>
+    <string name="status_sync_failed">Sikertelen szinkronizálás</string>
 
     <string name="common_coming_soon">Hamarosan</string>
 

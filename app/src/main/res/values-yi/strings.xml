@@ -46,6 +46,7 @@
     <string name="home_server_filter_combined">אַלע סערווערס</string>
     <string name="status_offline_mode">אָפֿליין־מאָדוס</string>
     <string name="status_no_network">קיין נעץ ניטאָ</string>
+    <string name="status_sync_failed">סינכראָניזאַציע ניט געלונגען</string>
 
     <string name="common_coming_soon">קומט באַלד</string>
 

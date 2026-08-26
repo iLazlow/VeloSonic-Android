@@ -4,53 +4,34 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import de.ilazlow.velosonic.data.ServerRepository
-import de.ilazlow.velosonic.data.db.SyncMetadataDao
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import javax.inject.Inject
 
-/** Mirrors MainView.swift's top-level branch: no server -> Login, server but initial sync not
- *  complete yet -> Syncing (SyncView), server + sync complete -> Ready (the main app shell). */
+/** Mirrors MainView.swift's top-level branch, minus the blocking Syncing step it never actually
+ *  had a real equivalent of anyway — this used to gate [Ready] behind every configured server's
+ *  [de.ilazlow.velosonic.data.db.SyncMetadataEntity.isInitialSyncComplete], showing a full-screen
+ *  blocking sync spinner (SyncScreen) in between. Removed: the app now drops straight into
+ *  [AppShell] the moment at least one server is configured, and [de.ilazlow.velosonic.data.sync.SyncEngine]
+ *  writes the freshly-synced library into Room incrementally as it fetches (see
+ *  [de.ilazlow.velosonic.data.sync.SyncEngine]'s initial-sync path) rather than in one atomic
+ *  commit at the very end — so the screens the user lands on fill in progressively instead of
+ *  sitting empty for the whole sync. [de.ilazlow.velosonic.ui.common.LibrarySyncStatusBanner]
+ *  (mounted globally in [AppShell]) is what now tells the user a sync is still in progress,
+ *  in place of the old full-screen blocker. */
 sealed interface AppRoute {
     data object Loading : AppRoute
     data object Login : AppRoute
-    data class Syncing(val host: String) : AppRoute
-    data class Ready(val host: String) : AppRoute
+    data object Ready : AppRoute
 }
 
 @HiltViewModel
 class AppRootViewModel @Inject constructor(
-    serverRepository: ServerRepository,
-    syncMetadataDao: SyncMetadataDao
+    serverRepository: ServerRepository
 ) : ViewModel() {
-
-    /** Waits for EVERY configured server's initial sync, not just the first one (alphabetically
-     *  first by name — in practice, whichever server happens to sort first) — gating on a single
-     *  "primary" server let the app through to [AppRoute.Ready] the moment that one server
-     *  finished, even while a second server's own initial sync was still running in the
-     *  background: confirmed live, the app showed only the already-synced server's library while
-     *  the other was silently still fetching, looking exactly like data loss. [AppRoute.Syncing]
-     *  now reports whichever server isn't done yet, so the sync screen has something concrete to
-     *  show instead of just sitting on the first server's completed state. */
-    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
     val route: StateFlow<AppRoute> = serverRepository.observeServers()
-        .flatMapLatest { servers ->
-            if (servers.isEmpty()) {
-                flowOf(AppRoute.Login)
-            } else {
-                combine(servers.map { syncMetadataDao.observeForHost(it.host) }) { metas ->
-                    val pendingIndex = metas.indexOfFirst { it?.isInitialSyncComplete != true }
-                    if (pendingIndex == -1) {
-                        AppRoute.Ready(servers.first().host)
-                    } else {
-                        AppRoute.Syncing(servers[pendingIndex].host)
-                    }
-                }
-            }
-        }
+        .map { servers -> if (servers.isEmpty()) AppRoute.Login else AppRoute.Ready }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), AppRoute.Loading)
 }

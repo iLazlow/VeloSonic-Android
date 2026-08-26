@@ -46,6 +46,7 @@
     <string name="home_server_filter_combined">所有服务器</string>
     <string name="status_offline_mode">离线模式</string>
     <string name="status_no_network">无网络连接</string>
+    <string name="status_sync_failed">同步失败</string>
 
     <string name="common_coming_soon">即将推出</string>
 

@@ -46,6 +46,7 @@
     <string name="home_server_filter_combined">كل الخوادم</string>
     <string name="status_offline_mode">وضع عدم الاتصال</string>
     <string name="status_no_network">لا يوجد اتصال بالشبكة</string>
+    <string name="status_sync_failed">فشلت المزامنة</string>
 
     <string name="common_coming_soon">قريبًا</string>
 

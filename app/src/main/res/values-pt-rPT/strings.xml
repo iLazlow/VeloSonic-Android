@@ -46,6 +46,7 @@
     <string name="home_server_filter_combined">Todos os servidores</string>
     <string name="status_offline_mode">Modo offline</string>
     <string name="status_no_network">Sem rede</string>
+    <string name="status_sync_failed">Falha na sincronização</string>
 
     <string name="common_coming_soon">Brevemente</string>
 

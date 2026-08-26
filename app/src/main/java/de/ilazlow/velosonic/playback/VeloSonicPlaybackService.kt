@@ -93,6 +93,21 @@ class VeloSonicPlaybackService : MediaSessionService() {
 
     override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaSession = engine.mediaSession
 
+    /** Media3's `MediaSessionService` has no default behavior here — without this override,
+     *  swiping the app away from Recents removes the task/UI but leaves the foreground playback
+     *  service (and its process) running exactly as before, which is the normal, deliberate
+     *  behavior most Android music players rely on. Explicitly requested to work differently here
+     *  instead: swiping away should stop playback outright, same as force-quitting on iOS
+     *  actually terminates the process there. Pausing before stopSelf() (rather than relying on
+     *  the eventual onDestroy() teardown alone) mirrors Media3's own official sample pattern —
+     *  guarantees audio actually stops immediately rather than possibly continuing for a moment
+     *  while the service winds down. */
+    override fun onTaskRemoved(rootIntent: Intent?) {
+        _engine?.mediaSession?.player?.pause()
+        stopSelf()
+        super.onTaskRemoved(rootIntent)
+    }
+
     override fun onDestroy() {
         _engine?.let { removeSession(it.mediaSession) }
         _engine?.release()

@@ -46,6 +46,7 @@
     <string name="home_server_filter_combined">Все серверы</string>
     <string name="status_offline_mode">Офлайн-режим</string>
     <string name="status_no_network">Нет сети</string>
+    <string name="status_sync_failed">Ошибка синхронизации</string>
 
     <string name="common_coming_soon">Скоро</string>
 

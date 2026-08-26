@@ -24,7 +24,6 @@ import de.ilazlow.velosonic.ui.AppRootViewModel
 import de.ilazlow.velosonic.ui.AppShell
 import de.ilazlow.velosonic.ui.login.LoginScreen
 import de.ilazlow.velosonic.ui.settings.AppearanceViewModel
-import de.ilazlow.velosonic.ui.sync.SyncScreen
 import de.ilazlow.velosonic.ui.theme.VeloSonicTheme
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -80,10 +79,10 @@ class MainActivity : ComponentActivity() {
 }
 
 /**
- * Mirrors MainView.swift's top-level branch: no server -> Login, server present but initial
- * sync not complete yet -> Syncing (SyncScreen), sync complete -> Ready (the main app shell).
- * Reactive to both Room tables it depends on, so login success and sync completion each
- * advance this automatically — no manual navigation call needed anywhere upstream.
+ * Mirrors MainView.swift's top-level branch: no server -> Login, server present -> Ready (the
+ * main app shell) immediately, no longer gated behind a blocking full-screen sync step — see
+ * [AppRoute]'s doc comment. Reactive to the server table, so login success advances this
+ * automatically — no manual navigation call needed anywhere upstream.
  */
 @Composable
 fun AppRoot(viewModel: AppRootViewModel = hiltViewModel()) {
@@ -91,7 +90,6 @@ fun AppRoot(viewModel: AppRootViewModel = hiltViewModel()) {
     when (route) {
         is AppRoute.Loading -> Unit
         is AppRoute.Login -> LoginScreen()
-        is AppRoute.Syncing -> SyncScreen(host = (route as AppRoute.Syncing).host)
         is AppRoute.Ready -> AppShell()
     }
 }

@@ -46,6 +46,7 @@
     <string name="home_server_filter_combined">Svi poslužitelji</string>
     <string name="status_offline_mode">Način rada izvan mreže</string>
     <string name="status_no_network">Nema mreže</string>
+    <string name="status_sync_failed">Sinkronizacija nije uspjela</string>
 
     <string name="common_coming_soon">Uskoro dostupno</string>
 

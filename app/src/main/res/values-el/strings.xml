@@ -46,6 +46,7 @@
     <string name="home_server_filter_combined">Όλοι οι διακομιστές</string>
     <string name="status_offline_mode">Λειτουργία εκτός σύνδεσης</string>
     <string name="status_no_network">Χωρίς δίκτυο</string>
+    <string name="status_sync_failed">Ο συγχρονισμός απέτυχε</string>
 
     <string name="common_coming_soon">Έρχεται σύντομα</string>
 

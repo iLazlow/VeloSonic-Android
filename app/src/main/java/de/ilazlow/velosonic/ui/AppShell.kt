@@ -47,6 +47,7 @@ import de.ilazlow.velosonic.ui.album.AlbumDetailScreen
 import de.ilazlow.velosonic.ui.artist.ArtistDetailScreen
 import de.ilazlow.velosonic.ui.common.ComingSoonScreen
 import de.ilazlow.velosonic.ui.common.ConnectivityStatusBanner
+import de.ilazlow.velosonic.ui.common.LibrarySyncStatusBanner
 import de.ilazlow.velosonic.ui.home.HomeScreen
 import de.ilazlow.velosonic.ui.library.AlbumsScreen
 import de.ilazlow.velosonic.ui.library.ArtistsScreen
@@ -220,7 +221,10 @@ fun AppShell(deepLinkViewModel: DeepLinkViewModel = hiltViewModel()) {
                     // other screen. Immersive screens paint their own gradient/hero art behind the
                     // status bar, so a push-down banner here would sit in a separate, plain white
                     // strip above that gradient instead of blending into it — handled below instead.
-                    if (!isImmersiveDetail) ConnectivityStatusBanner()
+                    if (!isImmersiveDetail) {
+                        ConnectivityStatusBanner()
+                        LibrarySyncStatusBanner()
+                    }
                     NavHost(
                         navController = navController,
                         startDestination = HomeRoute,
@@ -503,13 +507,18 @@ fun AppShell(deepLinkViewModel: DeepLinkViewModel = hiltViewModel()) {
                     // Offset below the screen's own back/title/menu row (a fixed-height custom bar,
                     // not a standard TopAppBar this could measure against) — at the bare TopCenter
                     // position the badge would render directly on top of that row's centered title
-                    // text instead of below it.
-                    ConnectivityStatusBanner(
+                    // text instead of below it. Stacked in a Column (not two independently-aligned
+                    // banners) so both can be visible at once — offline *and* still syncing — without
+                    // rendering on top of each other.
+                    Column(
                         modifier = Modifier
                             .align(Alignment.TopCenter)
                             .statusBarsPadding()
                             .padding(top = 60.dp)
-                    )
+                    ) {
+                        ConnectivityStatusBanner()
+                        LibrarySyncStatusBanner()
+                    }
                 }
             }
         }

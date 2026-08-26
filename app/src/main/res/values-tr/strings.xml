@@ -46,6 +46,7 @@
     <string name="home_server_filter_combined">Tüm Sunucular</string>
     <string name="status_offline_mode">Çevrimdışı Mod</string>
     <string name="status_no_network">Ağ Yok</string>
+    <string name="status_sync_failed">Eşitleme başarısız oldu</string>
 
     <string name="common_coming_soon">Yakında</string>
 

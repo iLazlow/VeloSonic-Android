@@ -46,6 +46,7 @@
     <string name="home_server_filter_combined">Toate serverele</string>
     <string name="status_offline_mode">Mod offline</string>
     <string name="status_no_network">Fără rețea</string>
+    <string name="status_sync_failed">Sincronizare eșuată</string>
 
     <string name="common_coming_soon">În curând</string>
 

@@ -46,6 +46,7 @@
     <string name="home_server_filter_combined">すべてのサーバー</string>
     <string name="status_offline_mode">オフラインモード</string>
     <string name="status_no_network">ネットワーク未接続</string>
+    <string name="status_sync_failed">同期に失敗しました</string>
 
     <string name="common_coming_soon">近日公開</string>
 
