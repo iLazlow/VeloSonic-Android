@@ -57,6 +57,18 @@
             android:exported="false"
             android:foregroundServiceType="dataSync" />
 
+        <!-- Google Cast wiring for media3-cast's CastPlayer — DefaultCastOptionsProvider targets
+             the Default Media Receiver (no custom receiver app registration needed for plain
+             progressive-audio Subsonic streams). MediaTransferReceiver is what lets the system-
+             level Output Switcher (not just Cast's own device-picker dialog) discover this app's
+             session as castable. -->
+        <meta-data
+            android:name="com.google.android.gms.cast.framework.OPTIONS_PROVIDER_CLASS_NAME"
+            android:value="androidx.media3.cast.DefaultCastOptionsProvider" />
+        <receiver
+            android:name="androidx.mediarouter.media.MediaTransferReceiver"
+            android:exported="true" />
+
         <!-- WorkManager's own internal service that actually hosts CoroutineWorker.setForeground()
              calls (SyncNowWorker) — its own library manifest declares no foregroundServiceType at
              all, and the type passed to ForegroundInfo at runtime must be a subset of what's

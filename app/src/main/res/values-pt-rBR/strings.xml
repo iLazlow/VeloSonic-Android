@@ -582,6 +582,7 @@
     <string name="add_to_playlist_track_count">%1$d faixas</string>
 
     <string name="player_live_stream">Transmissão ao Vivo</string>
+    <string name="player_casting_to">Transmitindo para %1$s</string>
     <string name="player_website_content_description">Site</string>
     <string name="player_live_label">AO VIVO</string>
     <string name="player_buffering_loading">Carregando</string>

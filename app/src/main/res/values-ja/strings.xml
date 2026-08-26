@@ -582,6 +582,7 @@
     <string name="add_to_playlist_track_count">%1$d曲</string>
 
     <string name="player_live_stream">ライブストリーム</string>
+    <string name="player_casting_to">%1$s にキャスト中</string>
     <string name="player_website_content_description">ウェブサイト</string>
     <string name="player_live_label">LIVE</string>
     <string name="player_buffering_loading">読み込み中</string>

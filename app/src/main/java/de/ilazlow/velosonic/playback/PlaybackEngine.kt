@@ -11,6 +11,7 @@ import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Metadata
+import androidx.media3.common.MimeTypes
 import androidx.media3.common.Player
 import androidx.media3.datasource.DataSource
 import androidx.media3.datasource.DataSpec
@@ -18,6 +19,8 @@ import androidx.media3.datasource.okhttp.OkHttpDataSource
 import androidx.media3.datasource.cache.CacheDataSource
 import androidx.media3.datasource.cache.LeastRecentlyUsedCacheEvictor
 import androidx.media3.datasource.cache.SimpleCache
+import androidx.media3.cast.CastPlayer
+import androidx.media3.cast.SessionAvailabilityListener
 import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.audio.AudioSink
@@ -27,6 +30,7 @@ import androidx.media3.extractor.metadata.icy.IcyInfo
 import androidx.media3.extractor.metadata.id3.TextInformationFrame
 import androidx.media3.extractor.metadata.vorbis.VorbisComment
 import androidx.media3.session.MediaSession
+import com.google.android.gms.cast.framework.CastContext
 import de.ilazlow.velosonic.data.datastore.EqSettingsStore
 import de.ilazlow.velosonic.data.datastore.PlaybackSettings
 import de.ilazlow.velosonic.data.datastore.PlaybackSettingsStore
@@ -82,7 +86,14 @@ data class NowPlaying(
      *  an explicit download — see [de.ilazlow.velosonic.data.download.DownloadRepository] for
      *  that) — backs the player pill's Streaming/Cached distinction. Recomputed once per track
      *  transition, not every position tick — see [PlaybackEngine]'s own doc comment on why. */
-    val isCurrentTrackCached: Boolean = false
+    val isCurrentTrackCached: Boolean = false,
+    /** True while a Google Cast session is actively receiving playback (see [PlaybackEngine]'s
+     *  [CastPlayer] wrapper) — EQ, ReplayGain, crossfade, and live ICY radio titles all no-op
+     *  while this is true, since none of them have a Cast-receiver-side equivalent. */
+    val isCasting: Boolean = false,
+    /** The connected Cast receiver's friendly name (e.g. "Living Room TV"), non-null only while
+     *  [isCasting] is true — drives the "Casting to …" indicator in the Player/mini-player. */
+    val castDeviceName: String? = null
 ) {
     val isPlayingRadio: Boolean get() = radioStation != null
 }
@@ -253,6 +264,11 @@ class PlaybackEngine(
      *  [cache], it's already carrying that stable key, not the raw stream URL. Building the query
      *  key any other way (e.g. the full stream URL — confirmed live: a track that really was
      *  cached still reported "Streaming") looks up the wrong bucket and silently finds nothing. */
+    /** False on any device with no functioning Google Play Services — see [castContext]'s doc
+     *  comment. Gates whether the UI shows a Cast button at all, since [buildCastPlayer] already
+     *  falls back to plain local playback either way. */
+    val isCastAvailable: Boolean get() = castContext != null
+
     fun isTrackCached(track: TrackEntity): Boolean {
         val streamUrl = subsonicClient.streamUrlFor(track.serverHost, track.subsonicId) ?: return false
         val key = stableCacheKeyFactory.buildCacheKey(DataSpec(Uri.parse(streamUrl)))
@@ -274,7 +290,68 @@ class PlaybackEngine(
         PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
     )
 
-    val mediaSession: MediaSession = MediaSession.Builder(context, player)
+    /** Null (and Cast permanently off for this process) on any device without functioning Google
+     *  Play Services (some tablets/Chromebooks, de-Googled ROMs, emulators without the Play Store
+     *  image) — [CastContext.getSharedInstance] throws rather than returning null in that case, so
+     *  every call site treats a null [castContext] (or a null [buildCastPlayer] result) as "Cast is
+     *  simply unavailable," never a crash. */
+    private val castContext: CastContext? = try {
+        CastContext.getSharedInstance(context)
+    } catch (e: Exception) {
+        log("Cast unavailable on this device: ${e.message}")
+        null
+    }
+
+    private val castSessionAvailabilityListener = object : SessionAvailabilityListener {
+        override fun onCastSessionAvailable() {
+            val deviceName = castContext?.sessionManager?.currentCastSession?.castDevice?.friendlyName
+            log("Cast session available: $deviceName")
+            _nowPlaying.update { it.copy(isCasting = true, castDeviceName = deviceName) }
+        }
+        override fun onCastSessionUnavailable() {
+            log("Cast session unavailable")
+            _nowPlaying.update { it.copy(isCasting = false, castDeviceName = null) }
+        }
+    }
+
+    /** Wraps [localPlayer] in a fresh [CastPlayer] so [mediaSession] can handle both local and
+     *  remote (Cast) playback through one [Player] instance, per Media3 1.9+'s recommended pattern
+     *  ([CastPlayer.Builder.setLocalPlayer]). Confirmed against the Media3 source that [CastPlayer]
+     *  has no API to swap its wrapped local player after construction — the wrapper must be rebuilt
+     *  from scratch on every local-player swap ([promoteCrossfadedPlayer]'s crossfade promotion is
+     *  currently the only such site), not just reassigned via `mediaSession.player = ...` like the
+     *  raw-[ExoPlayer] swap this replaces. This is safe specifically because crossfade is disabled
+     *  while actively casting (see [maybeScheduleCrossfade]'s `isCasting` guard) — the rebuild only
+     *  ever happens while [castPlayer] is wrapping local-only playback, never mid-remote-session. */
+    private fun buildCastPlayer(localPlayer: ExoPlayer): CastPlayer? {
+        // Presence check only — CastPlayer.Builder takes the plain Context (it resolves its own
+        // CastContext internally), but we still gate on castContext here so a device where
+        // CastContext.getSharedInstance() already failed once never attempts this at all.
+        if (castContext == null) return null
+        return try {
+            CastPlayer.Builder(context).setLocalPlayer(localPlayer).build().also {
+                it.setSessionAvailabilityListener(castSessionAvailabilityListener)
+            }
+        } catch (e: Exception) {
+            log("Failed to build CastPlayer: ${e.message}", e)
+            null
+        }
+    }
+
+    private var castPlayer: CastPlayer? = buildCastPlayer(player)
+
+    /** The player every command and every state read must go through — [CastPlayer] implements
+     *  the full [Player] interface and internally decides whether a call actually reaches the
+     *  local [player] or the remote Cast receiver, based on whether a session is connected (see
+     *  [castSessionAvailabilityListener]). Calling straight through to [player] anywhere outside
+     *  crossfade's own local-only dual-player mechanics bypasses that routing entirely — confirmed
+     *  live: doing so left [castPlayer] with an empty timeline (a picked Cast device showed the
+     *  receiver's idle "Default Media Receiver" screen, no title/artist/art) while [player] kept
+     *  playing out loud locally at the same time, since nothing had ever told the CastPlayer what
+     *  to play. */
+    private val activePlayer: Player get() = castPlayer ?: player
+
+    val mediaSession: MediaSession = MediaSession.Builder(context, activePlayer)
         .setCallback(object : MediaSession.Callback {})
         .setSessionActivity(sessionActivityPendingIntent)
         .build()
@@ -300,9 +377,9 @@ class PlaybackEngine(
         _nowPlaying.update { it.copy(radioStation = null, radioStreamTitle = null) }
         activeRadioStreamUrl = null
         val items = tracks.map { it.toMediaItem() }
-        player.setMediaItems(items, startIndex.coerceIn(0, items.lastIndex), 0)
-        player.prepare()
-        player.play()
+        activePlayer.setMediaItems(items, startIndex.coerceIn(0, items.lastIndex), 0)
+        activePlayer.prepare()
+        activePlayer.play()
         emitState()
     }
 
@@ -331,6 +408,11 @@ class PlaybackEngine(
         val item = MediaItem.Builder()
             .setMediaId("radio_${station.id}")
             .setUri(station.streamUrl)
+            // No per-station format is known ahead of time (Subsonic doesn't expose one for
+            // internet radio) — MP3 is the overwhelmingly common Icecast/Shoutcast default, and a
+            // wrong guess only matters while actually casting a station (local ExoPlayer sniffs
+            // content regardless of this value).
+            .setMimeType(MimeTypes.AUDIO_MPEG)
             .setMediaMetadata(
                 MediaMetadata.Builder()
                     .setTitle(station.name)
@@ -341,35 +423,35 @@ class PlaybackEngine(
             .build()
         _nowPlaying.update { it.copy(radioStation = station, radioStreamTitle = null, track = null, queue = emptyList()) }
         activeRadioStreamUrl = station.streamUrl
-        player.setMediaItem(item)
-        player.prepare()
-        player.play()
+        activePlayer.setMediaItem(item)
+        activePlayer.prepare()
+        activePlayer.play()
     }
 
     fun togglePlayPause() {
-        if (player.playbackState == Player.STATE_IDLE) player.prepare()
-        if (player.isPlaying) player.pause() else player.play()
+        if (activePlayer.playbackState == Player.STATE_IDLE) activePlayer.prepare()
+        if (activePlayer.isPlaying) activePlayer.pause() else activePlayer.play()
     }
 
-    fun seekTo(positionMs: Long) = player.seekTo(positionMs)
+    fun seekTo(positionMs: Long) = activePlayer.seekTo(positionMs)
 
-    fun skipToNext() = player.seekToNextMediaItem()
+    fun skipToNext() = activePlayer.seekToNextMediaItem()
 
     fun skipToPrevious() {
-        if (player.currentPosition > 3_000) player.seekTo(0) else player.seekToPreviousMediaItem()
+        if (activePlayer.currentPosition > 3_000) activePlayer.seekTo(0) else activePlayer.seekToPreviousMediaItem()
     }
 
     fun jumpTo(index: Int) {
-        if (index in queue.indices) player.seekTo(index, 0)
+        if (index in queue.indices) activePlayer.seekTo(index, 0)
     }
 
     fun toggleShuffle() {
-        player.shuffleModeEnabled = !player.shuffleModeEnabled
+        activePlayer.shuffleModeEnabled = !activePlayer.shuffleModeEnabled
         emitState()
     }
 
     fun cycleRepeatMode() {
-        player.repeatMode = when (player.repeatMode) {
+        activePlayer.repeatMode = when (activePlayer.repeatMode) {
             Player.REPEAT_MODE_OFF -> Player.REPEAT_MODE_ALL
             Player.REPEAT_MODE_ALL -> Player.REPEAT_MODE_ONE
             else -> Player.REPEAT_MODE_OFF
@@ -378,8 +460,8 @@ class PlaybackEngine(
     }
 
     fun insertPlayNext(track: TrackEntity) {
-        val insertAt = (player.currentMediaItemIndex + 1).coerceAtMost(player.mediaItemCount)
-        player.addMediaItem(insertAt, track.toMediaItem())
+        val insertAt = (activePlayer.currentMediaItemIndex + 1).coerceAtMost(activePlayer.mediaItemCount)
+        activePlayer.addMediaItem(insertAt, track.toMediaItem())
         queue = queue.toMutableList().apply { add(insertAt.coerceAtMost(size), track) }
         emitState()
         persistQueueState()
@@ -390,7 +472,7 @@ class PlaybackEngine(
      *  queue is now empty) on its own. */
     fun removeAt(index: Int) {
         if (index !in queue.indices) return
-        player.removeMediaItem(index)
+        activePlayer.removeMediaItem(index)
         queue = queue.toMutableList().apply { removeAt(index) }
         emitState()
         persistQueueState()
@@ -401,7 +483,7 @@ class PlaybackEngine(
      *  drift apart. */
     fun moveItem(from: Int, to: Int) {
         if (from !in queue.indices || to !in queue.indices || from == to) return
-        player.moveMediaItem(from, to)
+        activePlayer.moveMediaItem(from, to)
         queue = queue.toMutableList().apply { add(to, removeAt(from)) }
         emitState()
         persistQueueState()
@@ -418,7 +500,7 @@ class PlaybackEngine(
 
     fun clearQueue() {
         cancelCrossfade()
-        player.clearMediaItems()
+        activePlayer.clearMediaItems()
         queue = emptyList()
         currentAlbumId = null
         currentPlaylistId = null
@@ -435,8 +517,10 @@ class PlaybackEngine(
         tickerJob?.cancel()
         crossfadeJob?.cancel()
         crossfadePlayer?.release()
-        player.removeListener(mainPlayerListener)
+        activePlayer.removeListener(mainPlayerListener)
         player.release()
+        castPlayer?.setSessionAvailabilityListener(null)
+        castPlayer?.release()
         mediaSession.release()
         cache.release()
     }
@@ -484,6 +568,9 @@ class PlaybackEngine(
         return MediaItem.Builder()
             .setMediaId(id)
             .setUri(streamUrl)
+            // Unlike local ExoPlayer (which sniffs content), CastPlayer needs the MIME type set
+            // explicitly on the MediaItem to know how to ask the receiver to play it.
+            .setMimeType(contentType ?: MimeTypes.AUDIO_MPEG)
             .setMediaMetadata(
                 MediaMetadata.Builder()
                     .setTitle(title)
@@ -498,19 +585,19 @@ class PlaybackEngine(
     // ── State emission ──────────────────────────────────────────────────────────
 
     private fun emitState() {
-        val idx = player.currentMediaItemIndex.coerceIn(0, max(queue.size - 1, 0))
+        val idx = activePlayer.currentMediaItemIndex.coerceIn(0, max(queue.size - 1, 0))
         val current = queue.getOrNull(idx)
         _nowPlaying.update {
             it.copy(
                 track = current,
-                isPlaying = player.isPlaying,
-                isBuffering = player.playbackState == Player.STATE_BUFFERING,
-                positionMs = player.currentPosition.coerceAtLeast(0),
-                durationMs = player.duration.takeIf { d -> d != C.TIME_UNSET } ?: 0L,
+                isPlaying = activePlayer.isPlaying,
+                isBuffering = activePlayer.playbackState == Player.STATE_BUFFERING,
+                positionMs = activePlayer.currentPosition.coerceAtLeast(0),
+                durationMs = activePlayer.duration.takeIf { d -> d != C.TIME_UNSET } ?: 0L,
                 queue = queue,
                 currentIndex = idx,
-                shuffleEnabled = player.shuffleModeEnabled,
-                repeatMode = player.repeatMode,
+                shuffleEnabled = activePlayer.shuffleModeEnabled,
+                repeatMode = activePlayer.repeatMode,
                 isCurrentTrackCached = currentTrackCached
             )
         }
@@ -556,7 +643,7 @@ class PlaybackEngine(
             lastNowPlayingPingMs = 0L
             currentReplayGain = 1.0f
             player.volume = currentReplayGain
-            val idx = player.currentMediaItemIndex.coerceIn(0, max(queue.size - 1, 0))
+            val idx = activePlayer.currentMediaItemIndex.coerceIn(0, max(queue.size - 1, 0))
             val track = queue.getOrNull(idx)
             currentTrackCached = track?.let(::isTrackCached) ?: false
             track?.let { log("Now playing '${it.title}' by ${it.artistName} (cached=$currentTrackCached)") }
@@ -567,6 +654,12 @@ class PlaybackEngine(
         }
 
         override fun onMetadata(metadata: Metadata) {
+            // ICY radio titles and ReplayGain tags both come from the local ExoPlayer's own
+            // decode pipeline, which a CastPlayer bypasses entirely while remote — neither has a
+            // Cast-receiver-side equivalent, so both stay at their last local value (radio falls
+            // back to the station's static name via the existing radioStreamTitle ?: station.name
+            // chain) instead of silently going stale mid-cast-session.
+            if (_nowPlaying.value.isCasting) return
             for (i in 0 until metadata.length()) {
                 when (val entry = metadata.get(i)) {
                     is IcyInfo -> {
@@ -598,7 +691,7 @@ class PlaybackEngine(
     }
 
     init {
-        player.addListener(mainPlayerListener)
+        activePlayer.addListener(mainPlayerListener)
         scope.launch { playbackSettingsStore.settings.collect { settings = it } }
         scope.launch {
             eqSettingsStore.settings.collect { eq ->
@@ -630,7 +723,7 @@ class PlaybackEngine(
         tickerJob = scope.launch {
             while (true) {
                 delay(1_000)
-                if (!player.isPlaying) continue
+                if (!activePlayer.isPlaying) continue
                 tick()
             }
         }
@@ -641,7 +734,7 @@ class PlaybackEngine(
         // piggyback the 1s tick to keep it live instead of only updating on discrete events.
         emitState()
         val track = _nowPlaying.value.track ?: run { maybeScheduleCrossfade(); return }
-        val positionMs = player.currentPosition
+        val positionMs = activePlayer.currentPosition
         val durationMs = track.duration * 1000L
 
         if (settings.scrobblingEnabled && !hasScrobbledCurrent) {
@@ -676,7 +769,7 @@ class PlaybackEngine(
         }
     }
 
-    private fun reportServerState(state: String, positionMs: Long = player.currentPosition) {
+    private fun reportServerState(state: String, positionMs: Long = activePlayer.currentPosition) {
         val track = _nowPlaying.value.track ?: return
         val config = subsonicClient.configFor(track.serverHost) ?: return
         scope.launch {
@@ -703,8 +796,8 @@ class PlaybackEngine(
      *  touching a released player at all, so nothing here can be deferred into the coroutine
      *  body (which could run after `player.release()` has already happened). */
     private fun persistQueueState() {
-        val idx = player.currentMediaItemIndex
-        val positionMs = player.currentPosition
+        val idx = activePlayer.currentMediaItemIndex
+        val positionMs = activePlayer.currentPosition
         val trackIds = queue.map { it.id }
         val albumId = currentAlbumId
         val playlistId = currentPlaylistId
@@ -739,8 +832,8 @@ class PlaybackEngine(
             currentPlaylistId = saved.playlistId
             val items = ordered.map { it.toMediaItem() }
             val startIndex = saved.currentIndex.coerceIn(0, items.lastIndex)
-            player.setMediaItems(items, startIndex, saved.positionMs)
-            player.prepare()
+            activePlayer.setMediaItems(items, startIndex, saved.positionMs)
+            activePlayer.prepare()
             emitState()
         }
     }
@@ -768,8 +861,8 @@ class PlaybackEngine(
         currentAlbumId = null
         currentPlaylistId = null
         val items = ordered.map { it.toMediaItem() }
-        player.setMediaItems(items, startIndex, (node.position ?: 0).toLong())
-        player.prepare()
+        activePlayer.setMediaItems(items, startIndex, (node.position ?: 0).toLong())
+        activePlayer.prepare()
         emitState()
     }
 
@@ -777,8 +870,8 @@ class PlaybackEngine(
 
     private fun maybePrefetchContinuousMix() {
         val cp = settings.continuousPlaybackEnabled || isInstantMixActive
-        if (!cp || player.repeatMode != Player.REPEAT_MODE_OFF) return
-        if (queue.isEmpty() || player.currentMediaItemIndex + 1 < player.mediaItemCount || isExtendingQueue) return
+        if (!cp || activePlayer.repeatMode != Player.REPEAT_MODE_OFF) return
+        if (queue.isEmpty() || activePlayer.currentMediaItemIndex + 1 < activePlayer.mediaItemCount || isExtendingQueue) return
         val track = _nowPlaying.value.track ?: return
         val config = subsonicClient.configFor(track.serverHost) ?: return
         isExtendingQueue = true
@@ -789,7 +882,7 @@ class PlaybackEngine(
             ).take(CONTINUOUS_MIX_FETCH_SIZE)
             if (next.isNotEmpty()) {
                 queue = queue + next
-                player.addMediaItems(next.map { it.toMediaItem() })
+                activePlayer.addMediaItems(next.map { it.toMediaItem() })
                 persistQueueState()
             }
             isExtendingQueue = false
@@ -800,6 +893,9 @@ class PlaybackEngine(
 
     private fun maybeScheduleCrossfade() {
         if (!settings.crossfadeEnabled || settings.crossfadeSeconds <= 0) return
+        // Crossfade promotes a brand-new local ExoPlayer and rebuilds the CastPlayer wrapper
+        // around it (see buildCastPlayer's doc comment) — never safe to do mid-remote-session.
+        if (_nowPlaying.value.isCasting) return
         if (player.shuffleModeEnabled || crossfadePlayer != null) return
         val idx = player.currentMediaItemIndex
         val nextIndex = idx + 1
@@ -844,18 +940,26 @@ class PlaybackEngine(
         if (crossfadePlayer !== newPlayer) return
         crossfadePlayer = null
         val old = player
+        // Whichever player currently owns mainPlayerListener/mediaSession — normally castPlayer,
+        // since it wraps `old` and every command already routes through it (see activePlayer's
+        // doc comment). Captured before any reassignment below so the detach targets the right
+        // instance regardless.
+        val oldSessionPlayer = activePlayer
 
         val remaining = queue.drop(nextIndex + 1).map { it.toMediaItem() }
         if (remaining.isNotEmpty()) newPlayer.addMediaItems(remaining)
         newPlayer.repeatMode = old.repeatMode
 
         old.pause()
-        old.removeListener(mainPlayerListener)
+        oldSessionPlayer.removeListener(mainPlayerListener)
         player = newPlayer
         playerEqProcessor = crossfadePlayerEqProcessor ?: playerEqProcessor
         crossfadePlayerEqProcessor = null
-        player.addListener(mainPlayerListener)
-        mediaSession.player = player
+        castPlayer?.setSessionAvailabilityListener(null)
+        castPlayer?.release()
+        castPlayer = buildCastPlayer(player)
+        activePlayer.addListener(mainPlayerListener)
+        mediaSession.player = activePlayer
         old.release()
 
         hasScrobbledCurrent = false

@@ -192,6 +192,7 @@ class PlayerViewModel @Inject constructor(
         .map { it.artistBiography }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
+    val isCastAvailable: Boolean get() = playbackController.isCastAvailable
     fun togglePlayPause() = playbackController.togglePlayPause()
     fun skipToNext() = playbackController.skipToNext()
     fun skipToPrevious() = playbackController.skipToPrevious()

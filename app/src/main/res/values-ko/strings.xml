@@ -582,6 +582,7 @@
     <string name="add_to_playlist_track_count">트랙 %1$d개</string>
 
     <string name="player_live_stream">라이브 스트림</string>
+    <string name="player_casting_to">%1$s(으)로 캐스팅 중</string>
     <string name="player_website_content_description">웹사이트</string>
     <string name="player_live_label">LIVE</string>
     <string name="player_buffering_loading">로딩 중</string>

@@ -582,6 +582,7 @@
     <string name="add_to_playlist_track_count">%1$d tracks</string>
 
     <string name="player_live_stream">Live Stream</string>
+    <string name="player_casting_to">Casting to %1$s</string>
     <string name="player_website_content_description">Website</string>
     <string name="player_live_label">LIVE</string>
     <string name="player_buffering_loading">Loading</string>

@@ -582,6 +582,7 @@
     <string name="add_to_playlist_track_count">%1$d titres</string>
 
     <string name="player_live_stream">Diffusion en direct</string>
+    <string name="player_casting_to">Diffusion sur %1$s</string>
     <string name="player_website_content_description">Site web</string>
     <string name="player_live_label">DIRECT</string>
     <string name="player_buffering_loading">Chargement</string>

@@ -582,6 +582,7 @@
     <string name="add_to_playlist_track_count">%1$d bài hát</string>
 
     <string name="player_live_stream">Phát trực tiếp</string>
+    <string name="player_casting_to">Đang truyền đến %1$s</string>
     <string name="player_website_content_description">Trang web</string>
     <string name="player_live_label">TRỰC TIẾP</string>
     <string name="player_buffering_loading">Đang tải</string>

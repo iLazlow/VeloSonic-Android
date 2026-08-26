@@ -582,6 +582,7 @@
     <string name="add_to_playlist_track_count">%1$d треков</string>
 
     <string name="player_live_stream">Прямой эфир</string>
+    <string name="player_casting_to">Трансляция на %1$s</string>
     <string name="player_website_content_description">Сайт</string>
     <string name="player_live_label">ЭФИР</string>
     <string name="player_buffering_loading">Загрузка</string>

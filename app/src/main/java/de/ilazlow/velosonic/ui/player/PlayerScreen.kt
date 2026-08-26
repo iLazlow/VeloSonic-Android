@@ -66,9 +66,11 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -95,7 +97,10 @@ import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.launch
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.media3.cast.MediaRouteButton
+import androidx.media3.cast.rememberMediaRouteButtonState
 import androidx.media3.common.Player
+import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.offline.Download as DownloadState
 import coil3.compose.AsyncImage
 import de.ilazlow.velosonic.R
@@ -326,6 +331,11 @@ fun PlayerScreen(
             }
         }
 
+        val castDeviceName = nowPlaying.castDeviceName
+        if (nowPlaying.isCasting && castDeviceName != null) {
+            CastingIndicator(deviceName = castDeviceName, modifier = Modifier.align(Alignment.CenterHorizontally))
+        }
+
         Spacer(modifier = Modifier.height(24.dp))
 
         if (!nowPlaying.isPlayingRadio) {
@@ -496,7 +506,11 @@ fun PlayerScreen(
                     tint = if (showLyrics) Color.White else Color.White.copy(alpha = 0.5f),
                     modifier = Modifier.size(22.dp).clickable(onClick = { showLyrics = !showLyrics })
                 )
-                Icon(Icons.Filled.Cast, contentDescription = null, tint = Color.White.copy(alpha = 0.5f), modifier = Modifier.size(22.dp))
+                if (viewModel.isCastAvailable) {
+                    CastRouteButton()
+                } else {
+                    Icon(Icons.Filled.Cast, contentDescription = null, tint = Color.White.copy(alpha = 0.3f), modifier = Modifier.size(22.dp))
+                }
                 if (track != null) {
                     Icon(
                         Icons.Filled.Share,
@@ -755,6 +769,51 @@ private fun MoreRadioStationsSection(
                 HorizontalDivider(color = Color.White.copy(alpha = 0.15f))
             }
         }
+    }
+}
+
+/** Media3 1.11's Compose-native Cast route picker button — replaces the old visual-only Cast
+ *  icon now that [PlaybackEngine] actually wraps playback in a [androidx.media3.cast.CastPlayer].
+ *  Only rendered when [PlayerViewModel.isCastAvailable] is true (see that property's doc comment
+ *  for why: devices without functioning Google Play Services never reach here at all). */
+@OptIn(UnstableApi::class)
+@Composable
+private fun CastRouteButton() {
+    val state = rememberMediaRouteButtonState()
+    // MediaRouteButton has no color/tint parameter of its own — it draws its icon via an
+    // internal Icon() that reads LocalContentColor, which otherwise defaults to near-black and
+    // is unreadable against this screen's dark, blurred-artwork backdrop (confirmed live).
+    CompositionLocalProvider(LocalContentColor provides Color.White.copy(alpha = 0.7f)) {
+        MediaRouteButton(
+            modifier = Modifier.size(22.dp),
+            state = state
+        )
+    }
+}
+
+/** "Casting to …" pill shown right under the title/artist row while [NowPlaying.isCasting] is
+ *  true — the only visible sign a Cast session is active besides the route-picker button itself
+ *  ([CastRouteButton] in the icon row below stays inert-looking once picked, matching the picker
+ *  widget's own convention of showing the connected state via its icon, not a separate label). */
+@Composable
+private fun CastingIndicator(deviceName: String, modifier: Modifier = Modifier) {
+    Row(
+        modifier = modifier
+            .padding(top = 10.dp)
+            .clip(RoundedCornerShape(50))
+            .background(Color.White.copy(alpha = 0.12f))
+            .padding(horizontal = 12.dp, vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
+        Icon(Icons.Filled.Cast, contentDescription = null, tint = Color.White.copy(alpha = 0.85f), modifier = Modifier.size(16.dp))
+        Text(
+            text = stringResource(R.string.player_casting_to, deviceName),
+            color = Color.White.copy(alpha = 0.85f),
+            fontSize = 13.sp,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
     }
 }
 

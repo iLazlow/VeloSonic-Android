@@ -152,6 +152,10 @@ class PlaybackController @Inject constructor(
      *  other bit of [nowPlaying]-adjacent state being empty pre-bind. */
     fun isTrackCached(track: TrackEntity): Boolean = engine?.isTrackCached(track) ?: false
 
+    /** Same read-only, no-`ensureBound()` shape as [isTrackCached] — the Cast button just stays
+     *  hidden pre-bind rather than triggering a service start on its own. */
+    val isCastAvailable: Boolean get() = engine?.isCastAvailable ?: false
+
     fun removeAt(index: Int) = withEngine { it.removeAt(index) }
 
     fun moveItem(from: Int, to: Int) = withEngine { it.moveItem(from, to) }

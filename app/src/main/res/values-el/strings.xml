@@ -582,6 +582,7 @@
     <string name="add_to_playlist_track_count">%1$d κομμάτια</string>
 
     <string name="player_live_stream">Ζωντανή ροή</string>
+    <string name="player_casting_to">Μετάδοση σε %1$s</string>
     <string name="player_website_content_description">Ιστότοπος</string>
     <string name="player_live_label">LIVE</string>
     <string name="player_buffering_loading">Φόρτωση</string>

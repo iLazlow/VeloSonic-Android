@@ -102,6 +102,7 @@ dependencies {
     implementation(libs.androidx.media3.datasource.okhttp)
     implementation(libs.androidx.media3.common)
     implementation(libs.androidx.media3.ui)
+    implementation(libs.androidx.media3.cast)
 
     implementation(libs.coil.compose)
     implementation(libs.coil.network.okhttp)
