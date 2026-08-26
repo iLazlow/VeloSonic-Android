@@ -29,8 +29,11 @@ import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.extractor.metadata.icy.IcyInfo
 import androidx.media3.extractor.metadata.id3.TextInformationFrame
 import androidx.media3.extractor.metadata.vorbis.VorbisComment
+import androidx.media3.session.MediaLibraryService.MediaLibrarySession
 import androidx.media3.session.MediaSession
 import com.google.android.gms.cast.framework.CastContext
+import de.ilazlow.velosonic.data.LibraryRepository
+import de.ilazlow.velosonic.data.ServerRepository
 import de.ilazlow.velosonic.data.datastore.EqSettingsStore
 import de.ilazlow.velosonic.data.datastore.PlaybackSettings
 import de.ilazlow.velosonic.data.datastore.PlaybackSettingsStore
@@ -43,10 +46,12 @@ import de.ilazlow.velosonic.data.datastore.PlaybackStateStore
 import de.ilazlow.velosonic.data.db.RadioStationEntity
 import de.ilazlow.velosonic.data.db.TrackDao
 import de.ilazlow.velosonic.data.db.TrackEntity
+import de.ilazlow.velosonic.data.network.CoverArtUrlResolver
 import de.ilazlow.velosonic.data.network.OfflineModeGate
 import de.ilazlow.velosonic.data.network.SubsonicUrlBuilder
 import de.ilazlow.velosonic.data.playback.PlaybackSubsonicClient
 import de.ilazlow.velosonic.data.playback.ScrobbleQueue
+import de.ilazlow.velosonic.data.playlist.PlaylistSubsonicClient
 import de.ilazlow.velosonic.data.sync.compositeId
 import de.ilazlow.velosonic.domain.supportsOpenSubsonicExtensions
 import de.ilazlow.velosonic.domain.supportsReportPlayback
@@ -130,7 +135,11 @@ class PlaybackEngine(
     private val storageSettingsStore: StorageSettingsStore,
     private val logManager: LogManager,
     private val offlineModeGate: OfflineModeGate,
-    private val scrobbleQueue: ScrobbleQueue
+    private val scrobbleQueue: ScrobbleQueue,
+    private val libraryRepository: LibraryRepository,
+    private val serverRepository: ServerRepository,
+    private val playlistSubsonicClient: PlaylistSubsonicClient,
+    private val coverArtUrlResolver: CoverArtUrlResolver
 ) {
     /** Every playback log line, in both Logcat and [LogManager] (in-app viewer, gated on the
      *  user's own logging toggle) — one call instead of two at every site. */
@@ -351,8 +360,27 @@ class PlaybackEngine(
      *  to play. */
     private val activePlayer: Player get() = castPlayer ?: player
 
-    val mediaSession: MediaSession = MediaSession.Builder(context, activePlayer)
-        .setCallback(object : MediaSession.Callback {})
+    /** Android Auto's browse tree — see that class's doc comment. Passed the exact same
+     *  track/radio → playable-[MediaItem] builders this engine's own queue uses ([buildTrackMediaItem],
+     *  [buildRadioMediaItem]), so a track tapped in Auto ends up with the identical stream URL/
+     *  artwork/MIME type it would get from the phone UI. */
+    private val autoLibrarySessionCallback = AutoLibrarySessionCallback(
+        context = context,
+        scope = scope,
+        libraryRepository = libraryRepository,
+        serverRepository = serverRepository,
+        playlistSubsonicClient = playlistSubsonicClient,
+        coverArtUrlResolver = coverArtUrlResolver,
+        resolveTrackMediaItem = ::buildTrackMediaItem,
+        resolveRadioMediaItem = ::buildRadioMediaItem
+    )
+
+    /** [MediaLibrarySession] (not a plain [MediaSession]) is what makes this session's content
+     *  browsable at all — Android Auto (and Assistant/Wear/any MediaBrowser) discovers a browse
+     *  tree only through this subtype's [androidx.media3.session.MediaLibraryService.MediaLibrarySession.Callback],
+     *  which a plain `MediaSession.Callback` has no equivalent for. Built around [activePlayer]
+     *  exactly like the plain-MediaSession version this replaces — Cast keeps working unchanged. */
+    val mediaSession: MediaLibrarySession = MediaLibrarySession.Builder(context, activePlayer, autoLibrarySessionCallback)
         .setSessionActivity(sessionActivityPendingIntent)
         .build()
 
@@ -392,11 +420,22 @@ class PlaybackEngine(
         queue = emptyList()
         currentAlbumId = null
         currentPlaylistId = null
-        // Subsonic's internet-radio artwork convention prefixes the cover-art id with "ra-" — a
-        // station's own coverArt value isn't a valid getCoverArt id by itself (mirrors iOS's
-        // `"ra-\(station.id)"`; see RadioScreen.kt, the UI-side call site using the same
-        // convention). Without this the OS media notification/lock-screen showed no artwork at
-        // all for radio, even for stations that do have cover art.
+        val item = buildRadioMediaItem(station)
+        _nowPlaying.update { it.copy(radioStation = station, radioStreamTitle = null, track = null, queue = emptyList()) }
+        activeRadioStreamUrl = station.streamUrl
+        activePlayer.setMediaItem(item)
+        activePlayer.prepare()
+        activePlayer.play()
+    }
+
+    /** Shared by [playRadio] and [AutoLibrarySessionCallback] (Android Auto's browse tree resolves
+     *  a tapped radio station leaf through this same builder, so both surfaces agree on artwork/
+     *  MIME type). Subsonic's internet-radio artwork convention prefixes the cover-art id with
+     *  "ra-" — a station's own `coverArt` value isn't a valid `getCoverArt` id by itself (mirrors
+     *  iOS's `"ra-\(station.id)"`; see RadioScreen.kt, the UI-side call site using the same
+     *  convention). Without this the OS media notification/lock-screen showed no artwork at all
+     *  for radio, even for stations that do have cover art. */
+    internal fun buildRadioMediaItem(station: RadioStationEntity): MediaItem {
         val config = station.coverArt?.let { subsonicClient.configFor(station.serverHost) }
         val artworkUrl = config?.let {
             SubsonicUrlBuilder.build(
@@ -405,7 +444,7 @@ class PlaybackEngine(
                 extraParams = mapOf("id" to "ra-${station.subsonicId}", "size" to "600")
             )
         }
-        val item = MediaItem.Builder()
+        return MediaItem.Builder()
             .setMediaId("radio_${station.id}")
             .setUri(station.streamUrl)
             // No per-station format is known ahead of time (Subsonic doesn't expose one for
@@ -421,11 +460,6 @@ class PlaybackEngine(
                     .build()
             )
             .build()
-        _nowPlaying.update { it.copy(radioStation = station, radioStreamTitle = null, track = null, queue = emptyList()) }
-        activeRadioStreamUrl = station.streamUrl
-        activePlayer.setMediaItem(item)
-        activePlayer.prepare()
-        activePlayer.play()
     }
 
     fun togglePlayPause() {
@@ -553,7 +587,10 @@ class PlaybackEngine(
             .build()
     }
 
-    private fun TrackEntity.toMediaItem(): MediaItem {
+    /** Not private: [AutoLibrarySessionCallback] (Android Auto's browse tree) resolves a tapped
+     *  track leaf through this exact same builder, so both surfaces build an identical playable
+     *  [MediaItem] (same stream URL, artwork, MIME type) for the same track. */
+    internal fun TrackEntity.toMediaItem(): MediaItem {
         val config = subsonicClient.configFor(serverHost)
         val streamUrl = subsonicClient.streamUrlFor(serverHost, subsonicId) ?: ""
         val artworkUrl = coverArt?.let { artId ->
@@ -581,6 +618,10 @@ class PlaybackEngine(
             )
             .build()
     }
+
+    /** Plain wrapper around the member-extension [TrackEntity.toMediaItem] — [AutoLibrarySessionCallback]
+     *  lives outside this class, so it can't invoke a member extension function directly. */
+    internal fun buildTrackMediaItem(track: TrackEntity): MediaItem = track.toMediaItem()
 
     // ── State emission ──────────────────────────────────────────────────────────
 
@@ -634,10 +675,46 @@ class PlaybackEngine(
          *  paused and ready. Confirmed live: restoring a saved queue on launch left the pill on
          *  "Loading…" indefinitely; iOS re-syncs this state immediately instead. */
         override fun onPlaybackStateChanged(playbackState: Int) {
+            if (_nowPlaying.value.isCasting) {
+                // Diagnostic for the intermittent "Default Media Receiver" placeholder report —
+                // ties a buffering->ready transition (the window a not-yet-cached/slow-to-buffer
+                // track sits in longest) to what CastPlayer itself is reporting as the current
+                // item's metadata at that exact moment, so a real repro's Logcat can show whether
+                // the metadata was ever actually missing at the SDK level, or only in how/when the
+                // phone's own notification picked it up.
+                val stateName = when (playbackState) {
+                    Player.STATE_IDLE -> "IDLE"
+                    Player.STATE_BUFFERING -> "BUFFERING"
+                    Player.STATE_READY -> "READY"
+                    Player.STATE_ENDED -> "ENDED"
+                    else -> playbackState.toString()
+                }
+                val md = activePlayer.mediaMetadata
+                log("Cast playbackState=$stateName activePlayer.title=${md.title} activePlayer.artist=${md.artist} currentTrackCached=$currentTrackCached")
+            }
             emitState()
         }
 
+        override fun onMediaMetadataChanged(mediaMetadata: MediaMetadata) {
+            if (_nowPlaying.value.isCasting) {
+                log("Cast onMediaMetadataChanged: title=${mediaMetadata.title} artist=${mediaMetadata.artist} albumTitle=${mediaMetadata.albumTitle}")
+            }
+        }
+
         override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
+            // CastPlayer's local->remote handoff fires a transient PLAYLIST_CHANGED transition
+            // with a synthetic, metadata-less MediaItem (confirmed live: title/artist/mediaId all
+            // null) and currentMediaItemIndex defaulting to 0, seconds before the receiver's real
+            // MediaStatus arrives and a second, correct transition follows. Every real MediaItem
+            // this app ever builds (toMediaItem()/buildRadioMediaItem()) always sets a title, so a
+            // null one here is unambiguously that phantom event, not an actual track change —
+            // treating it as real was resetting scrobble state and (worse) reporting "starting"
+            // playback to the server for whatever track happened to be at index 0, and showing
+            // that track's metadata in the app's own Player UI until the real transition arrived.
+            if (mediaItem?.mediaMetadata?.title == null) {
+                if (_nowPlaying.value.isCasting) log("Cast onMediaItemTransition: ignoring phantom transition (null mediaItem/title) during Cast handoff")
+                return
+            }
             hasScrobbledCurrent = false
             lastPositionSaveMs = 0L
             lastNowPlayingPingMs = 0L
@@ -647,6 +724,16 @@ class PlaybackEngine(
             val track = queue.getOrNull(idx)
             currentTrackCached = track?.let(::isTrackCached) ?: false
             track?.let { log("Now playing '${it.title}' by ${it.artistName} (cached=$currentTrackCached)") }
+            if (_nowPlaying.value.isCasting) {
+                val reasonName = when (reason) {
+                    Player.MEDIA_ITEM_TRANSITION_REASON_AUTO -> "AUTO"
+                    Player.MEDIA_ITEM_TRANSITION_REASON_SEEK -> "SEEK"
+                    Player.MEDIA_ITEM_TRANSITION_REASON_PLAYLIST_CHANGED -> "PLAYLIST_CHANGED"
+                    Player.MEDIA_ITEM_TRANSITION_REASON_REPEAT -> "REPEAT"
+                    else -> reason.toString()
+                }
+                log("Cast onMediaItemTransition reason=$reasonName resolvedTrack=${track?.title} mediaItem.title=${mediaItem?.mediaMetadata?.title} activePlayer.title=${activePlayer.mediaMetadata.title}")
+            }
             emitState()
             persistQueueState()
             reportServerState("starting")
@@ -882,6 +969,17 @@ class PlaybackEngine(
             ).take(CONTINUOUS_MIX_FETCH_SIZE)
             if (next.isNotEmpty()) {
                 queue = queue + next
+                // Reverted from an earlier full-setMediaItems-reload "fix" — real Logcat evidence
+                // (see the git history/PR discussion around this line) showed that a full reload
+                // is what actually causes the Cast receiver's own MediaStatus to briefly go blank
+                // (a PLAYLIST_CHANGED event), which the Google Home app's own now-playing card then
+                // displays as its generic "ExoPlayer Default Receiver" fallback — and that a plain
+                // incremental addMediaItems() append (queueInsertItems on the Cast SDK side) never
+                // triggers that: every normal AUTO track transition to an already-queued item in
+                // the same log showed onMediaMetadataChanged arriving cleanly ahead of the
+                // transition, no gap at all. The only confirmed source of the null-metadata window
+                // is the local->remote handoff itself (once, at Cast session start) — not something
+                // an incremental append should ever reproduce.
                 activePlayer.addMediaItems(next.map { it.toMediaItem() })
                 persistQueueState()
             }

@@ -68,6 +68,10 @@ okhttp-core = { group = "com.squareup.okhttp3", name = "okhttp", version.ref = "
 okhttp-logging-interceptor = { group = "com.squareup.okhttp3", name = "logging-interceptor", version.ref = "okhttp" }
 kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinxSerializationJson" }
 kotlinx-coroutines-android = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-android", version.ref = "kotlinxCoroutines" }
+# Bridges suspend functions to Guava ListenableFuture — required by MediaLibrarySession.Callback's
+# browse-tree methods (onGetLibraryRoot/onGetChildren/onGetItem/onAddMediaItems), which are a Java/
+# Guava-future-based API (Media3 session's own contract, not something Kotlin-coroutine-native).
+kotlinx-coroutines-guava = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-guava", version.ref = "kotlinxCoroutines" }
 
 androidx-datastore-preferences = { group = "androidx.datastore", name = "datastore-preferences", version.ref = "datastorePreferences" }
 

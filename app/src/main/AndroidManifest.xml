@@ -44,12 +44,21 @@
                 <data android:scheme="velosonic" />
             </intent-filter>
         </activity>
+        <!-- Android Auto's phone-projected host discovers this service via the legacy
+             android.media.browse.MediaBrowserService action (Auto still connects through the
+             classic MediaBrowserService protocol under the hood); Media3-native MediaBrowser
+             clients (Assistant, Wear, any Media3 MediaController app) use the newer
+             MediaLibraryService action. Both are declared side by side, same as the plain
+             MediaSessionService action still needed for the system media notification/lock
+             screen — no single action covers every client type. -->
         <service
             android:name=".playback.VeloSonicPlaybackService"
             android:exported="true"
             android:foregroundServiceType="mediaPlayback">
             <intent-filter>
                 <action android:name="androidx.media3.session.MediaSessionService" />
+                <action android:name="androidx.media3.session.MediaLibraryService" />
+                <action android:name="android.media.browse.MediaBrowserService" />
             </intent-filter>
         </service>
         <service
@@ -67,6 +76,23 @@
             android:value="androidx.media3.cast.DefaultCastOptionsProvider" />
         <receiver
             android:name="androidx.mediarouter.media.MediaTransferReceiver"
+            android:exported="true" />
+
+        <!-- Android Auto app descriptor — see res/xml/automotive_app_desc.xml's own comment. -->
+        <meta-data
+            android:name="com.google.android.gms.car.application"
+            android:resource="@xml/automotive_app_desc" />
+
+        <!-- Bridges browse-tree/queue artwork for Android Auto, which refuses plain https:// URLs
+             for that purpose — see CoverArtContentProvider's own doc comment. Exported (unlike
+             most providers in this app): Android Auto's host is a separate app/process that reads
+             an artworkUri straight off a MediaItem via its own ContentResolver call, not through
+             any Intent-based per-URI grant this app controls — the provider itself only ever
+             serves read-only cached album art (query/insert/update/delete are all stubbed to
+             no-ops), so there's nothing sensitive an exported provider exposes here. -->
+        <provider
+            android:name=".data.coverart.CoverArtContentProvider"
+            android:authorities="de.ilazlow.velosonic.coverart"
             android:exported="true" />
 
         <!-- WorkManager's own internal service that actually hosts CoroutineWorker.setForeground()

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Declares this app as a media app for Android Auto — required for the phone-projected Auto
+     host to even consider VeloSonicPlaybackService's browse tree, on top of the manifest's own
+     androidx.media3.session.MediaLibraryService / android.media.browse.MediaBrowserService
+     intent-filter actions on that service. -->
+<automotiveApp>
+    <uses name="media" />
+</automotiveApp>
