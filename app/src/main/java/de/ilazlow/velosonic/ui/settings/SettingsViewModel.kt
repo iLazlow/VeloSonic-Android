@@ -215,6 +215,10 @@ class SettingsViewModel @Inject constructor(
         lyricsSettingsStore.setRadiantLyricsAiSynthesizeEnabled(enabled)
     }
 
+    fun setLyricsAutoSyncEnabled(enabled: Boolean) = viewModelScope.launch {
+        lyricsSettingsStore.setLyricsAutoSyncEnabled(enabled)
+    }
+
     fun setEqEnabled(enabled: Boolean) = viewModelScope.launch { eqSettingsStore.setEnabled(enabled) }
 
     fun setEqGain(band: Int, value: Float) = viewModelScope.launch { eqSettingsStore.setGain(band, value) }

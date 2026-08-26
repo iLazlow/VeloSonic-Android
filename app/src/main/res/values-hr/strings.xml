@@ -70,7 +70,11 @@
     <string name="settings_lyrics_source_lrclib_title">lrclib.net</string>
     <string name="settings_lyrics_source_lrclib_subtitle">Samo tekstovi iz zajednice</string>
     <string name="player_lyrics_source_server">Poslužitelj</string>
+    <string name="player_lyrics_pill_label_source">Izvor</string>
+    <string name="player_lyrics_pill_label_mode">Način</string>
     <string name="settings_lyrics_section_sync">Sinkronizacija tekstova</string>
+    <string name="settings_lyrics_auto_sync_title">Automatska sinkronizacija tekstova</string>
+    <string name="settings_lyrics_auto_sync_subtitle">Automatski dohvaća tekstove u pozadini za pjesme koje ih još nemaju predmemorirane. Zadano isključeno — i dalje možete ručno sinkronizirati ispod.</string>
     <string name="settings_lyrics_sync_description">Dohvaća tekstove u pozadini za reprodukciju izvan mreže, dajući prednost pjesmama koje su već predmemorirane u vašoj biblioteci.</string>
     <string name="settings_lyrics_full_resync">Potpuna ponovna sinkronizacija</string>
     <string name="settings_lyrics_full_resync_message">Ovo ponovno provjerava tekstove za svaku pjesmu u vašoj biblioteci, ne samo one koje nikad nisu provjerene.</string>

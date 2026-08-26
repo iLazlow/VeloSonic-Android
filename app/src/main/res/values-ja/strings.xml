@@ -70,7 +70,11 @@
     <string name="settings_lyrics_source_lrclib_title">lrclib.net</string>
     <string name="settings_lyrics_source_lrclib_subtitle">コミュニティ提供の歌詞のみ</string>
     <string name="player_lyrics_source_server">サーバー</string>
+    <string name="player_lyrics_pill_label_source">ソース</string>
+    <string name="player_lyrics_pill_label_mode">モード</string>
     <string name="settings_lyrics_section_sync">歌詞の同期</string>
+    <string name="settings_lyrics_auto_sync_title">歌詞の自動同期</string>
+    <string name="settings_lyrics_auto_sync_subtitle">まだキャッシュされていない曲の歌詞を、バックグラウンドで自動的に取得します。デフォルトではオフです。以下から手動で同期することもできます。</string>
     <string name="settings_lyrics_sync_description">オフライン再生用に、バックグラウンドで歌詞を取得します。ライブラリ内ですでにキャッシュされている曲を優先します。</string>
     <string name="settings_lyrics_full_resync">完全な再同期</string>
     <string name="settings_lyrics_full_resync_message">未確認の曲だけでなく、ライブラリ内のすべての曲の歌詞を再確認します。</string>

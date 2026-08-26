@@ -70,7 +70,11 @@
     <string name="settings_lyrics_source_lrclib_title">lrclib.net</string>
     <string name="settings_lyrics_source_lrclib_subtitle">Μόνο στίχοι από την κοινότητα</string>
     <string name="player_lyrics_source_server">Διακομιστής</string>
+    <string name="player_lyrics_pill_label_source">Πηγή</string>
+    <string name="player_lyrics_pill_label_mode">Λειτουργία</string>
     <string name="settings_lyrics_section_sync">Συγχρονισμός στίχων</string>
+    <string name="settings_lyrics_auto_sync_title">Αυτόματος συγχρονισμός στίχων</string>
+    <string name="settings_lyrics_auto_sync_subtitle">Λαμβάνει αυτόματα στίχους στο παρασκήνιο για κομμάτια που δεν τους έχουν ακόμη αποθηκευμένους. Απενεργοποιημένο από προεπιλογή — μπορείτε να συγχρονίσετε χειροκίνητα παρακάτω.</string>
     <string name="settings_lyrics_sync_description">Λαμβάνει στίχους στο παρασκήνιο για αναπαραγωγή εκτός σύνδεσης, δίνοντας προτεραιότητα στα κομμάτια που είναι ήδη αποθηκευμένα στη βιβλιοθήκη σας.</string>
     <string name="settings_lyrics_full_resync">Πλήρης επανασυγχρονισμός</string>
     <string name="settings_lyrics_full_resync_message">Αυτό ελέγχει ξανά τους στίχους για κάθε κομμάτι στη βιβλιοθήκη σας, όχι μόνο αυτά που δεν έχουν ελεγχθεί ποτέ.</string>

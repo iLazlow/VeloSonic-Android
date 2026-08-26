@@ -70,7 +70,11 @@
     <string name="settings_lyrics_source_lrclib_title">lrclib.net</string>
     <string name="settings_lyrics_source_lrclib_subtitle">Tylko teksty ze źródeł społecznościowych</string>
     <string name="player_lyrics_source_server">Serwer</string>
+    <string name="player_lyrics_pill_label_source">Źródło</string>
+    <string name="player_lyrics_pill_label_mode">Tryb</string>
     <string name="settings_lyrics_section_sync">Synchronizacja tekstów</string>
+    <string name="settings_lyrics_auto_sync_title">Automatyczna synchronizacja tekstów</string>
+    <string name="settings_lyrics_auto_sync_subtitle">Automatycznie pobiera teksty w tle dla utworów, które nie mają ich jeszcze zapisanych w pamięci podręcznej. Domyślnie wyłączone — nadal możesz zsynchronizować ręcznie poniżej.</string>
     <string name="settings_lyrics_sync_description">Pobiera teksty w tle na potrzeby odtwarzania offline, preferując utwory już zapisane w Twojej bibliotece.</string>
     <string name="settings_lyrics_full_resync">Pełna resynchronizacja</string>
     <string name="settings_lyrics_full_resync_message">To ponownie sprawdza teksty dla każdego utworu w Twojej bibliotece, nie tylko tych nigdy wcześniej niesprawdzonych.</string>

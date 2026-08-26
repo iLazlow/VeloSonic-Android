@@ -70,7 +70,11 @@
     <string name="settings_lyrics_source_lrclib_title">lrclib.net</string>
     <string name="settings_lyrics_source_lrclib_subtitle">Yalnızca topluluk kaynaklı şarkı sözleri</string>
     <string name="player_lyrics_source_server">Sunucu</string>
+    <string name="player_lyrics_pill_label_source">Kaynak</string>
+    <string name="player_lyrics_pill_label_mode">Mod</string>
     <string name="settings_lyrics_section_sync">Şarkı Sözü Eşitleme</string>
+    <string name="settings_lyrics_auto_sync_title">Şarkı Sözlerini Otomatik Eşitle</string>
+    <string name="settings_lyrics_auto_sync_subtitle">Henüz önbelleğe alınmamış parçalar için şarkı sözlerini arka planda otomatik olarak getirir. Varsayılan olarak kapalıdır — aşağıdan yine de manuel olarak eşitleyebilirsiniz.</string>
     <string name="settings_lyrics_sync_description">Çevrimdışı çalma için arka planda şarkı sözlerini getirir; öncelikle kitaplığınızda zaten önbelleğe alınmış parçaları tercih eder.</string>
     <string name="settings_lyrics_full_resync">Tam Yeniden Eşitleme</string>
     <string name="settings_lyrics_full_resync_message">Bu, yalnızca daha önce hiç kontrol edilmemiş olanları değil, kitaplığınızdaki her parçanın şarkı sözlerini yeniden kontrol eder.</string>

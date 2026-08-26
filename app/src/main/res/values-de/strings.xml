@@ -70,7 +70,11 @@
     <string name="settings_lyrics_source_lrclib_title">lrclib.net</string>
     <string name="settings_lyrics_source_lrclib_subtitle">Nur Songtexte aus der Community</string>
     <string name="player_lyrics_source_server">Server</string>
+    <string name="player_lyrics_pill_label_source">Quelle</string>
+    <string name="player_lyrics_pill_label_mode">Modus</string>
     <string name="settings_lyrics_section_sync">Songtext-Synchronisierung</string>
+    <string name="settings_lyrics_auto_sync_title">Lyrics automatisch synchronisieren</string>
+    <string name="settings_lyrics_auto_sync_subtitle">Ruft Songtexte automatisch im Hintergrund für Titel ab, die noch keinen im Cache haben. Standardmäßig deaktiviert — unten kannst du weiterhin manuell synchronisieren.</string>
     <string name="settings_lyrics_sync_description">Lädt Songtexte im Hintergrund für die Offline-Wiedergabe herunter und bevorzugt dabei bereits zwischengespeicherte Titel deiner Bibliothek.</string>
     <string name="settings_lyrics_full_resync">Vollständig neu synchronisieren</string>
     <string name="settings_lyrics_full_resync_message">Dies prüft die Songtexte für jeden Titel in deiner Bibliothek erneut, nicht nur die noch nie geprüften.</string>

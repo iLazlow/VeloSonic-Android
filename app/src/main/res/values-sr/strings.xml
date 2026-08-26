@@ -70,7 +70,11 @@
     <string name="settings_lyrics_source_lrclib_title">lrclib.net</string>
     <string name="settings_lyrics_source_lrclib_subtitle">Само текстови из заједнице</string>
     <string name="player_lyrics_source_server">Сервер</string>
+    <string name="player_lyrics_pill_label_source">Извор</string>
+    <string name="player_lyrics_pill_label_mode">Режим</string>
     <string name="settings_lyrics_section_sync">Синхронизација текста</string>
+    <string name="settings_lyrics_auto_sync_title">Аутоматска синхронизација текста</string>
+    <string name="settings_lyrics_auto_sync_subtitle">Аутоматски преузима текстове у позадини за нумере које их још немају кеширане. Подразумевано искључено — и даље можете ручно да синхронизујете испод.</string>
     <string name="settings_lyrics_sync_description">Преузима текстове песама у позадини за пуштање ван мреже, дајући предност већ кешираним нумерама у вашој библиотеци.</string>
     <string name="settings_lyrics_full_resync">Потпуна поновна синхронизација</string>
     <string name="settings_lyrics_full_resync_message">Ово поново проверава текстове за сваку нумеру у вашој библиотеци, не само оне које никада нису проверене.</string>

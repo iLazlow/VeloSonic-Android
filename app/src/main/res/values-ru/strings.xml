@@ -70,7 +70,11 @@
     <string name="settings_lyrics_source_lrclib_title">lrclib.net</string>
     <string name="settings_lyrics_source_lrclib_subtitle">Только тексты из открытого сообщества</string>
     <string name="player_lyrics_source_server">Сервер</string>
+    <string name="player_lyrics_pill_label_source">Источник</string>
+    <string name="player_lyrics_pill_label_mode">Режим</string>
     <string name="settings_lyrics_section_sync">Синхронизация текстов</string>
+    <string name="settings_lyrics_auto_sync_title">Автосинхронизация текстов</string>
+    <string name="settings_lyrics_auto_sync_subtitle">Автоматически загружает тексты в фоновом режиме для треков, у которых их ещё нет в кэше. По умолчанию отключено — синхронизировать вручную можно ниже.</string>
     <string name="settings_lyrics_sync_description">Загружает тексты в фоновом режиме для офлайн-воспроизведения, в первую очередь для уже кэшированных треков вашей библиотеки.</string>
     <string name="settings_lyrics_full_resync">Полная пересинхронизация</string>
     <string name="settings_lyrics_full_resync_message">Это заново проверяет тексты для каждого трека в вашей библиотеке, а не только для тех, что ещё не проверялись.</string>

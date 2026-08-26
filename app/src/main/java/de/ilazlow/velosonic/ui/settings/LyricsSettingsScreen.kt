@@ -142,6 +142,12 @@ fun LyricsSettingsScreen(
         )
 
         SettingsSectionHeader(stringResource(id = R.string.settings_lyrics_section_sync))
+        SettingsSwitchRow(
+            title = stringResource(id = R.string.settings_lyrics_auto_sync_title),
+            subtitle = stringResource(id = R.string.settings_lyrics_auto_sync_subtitle),
+            checked = lyrics.lyricsAutoSyncEnabled,
+            onCheckedChange = viewModel::setLyricsAutoSyncEnabled
+        )
         LyricsSyncSection(
             state = syncState,
             onSync = { syncViewModel.startSync() },

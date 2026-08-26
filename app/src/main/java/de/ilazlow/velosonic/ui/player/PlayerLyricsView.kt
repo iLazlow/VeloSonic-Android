@@ -71,13 +71,17 @@ import kotlin.math.sin
 
 /**
  * Mirrors PlayerLyricsView.swift's Apple-Music-style centered scroller: source/format status
- * pills pinned to the top, a top/bottom fade mask, uniform-size bold lines whose visual hierarchy
- * comes purely from opacity/scale/blur (never font size, so the layout never reflows as the
- * active line changes), and a per-word left-to-right sweep with a small sparkle accent on the
- * active line. A Radiant Lyrics ("Word"-type) line carries real per-word timestamps and sweeps
- * off those directly; every other source (Navidrome/lrclib/local, all line-only) synthesizes a
- * pseudo-sweep proportionally-by-character-count the same way iOS does for its own plain-LRC
- * lines — the "Word-by-word"/"Line-by-line" status pill reflects which one actually happened.
+ * pills pinned to the top (each with a small caption above it — "Source"/"Mode" — so the two
+ * aren't mistaken for each other), a top/bottom fade mask, uniform-size bold lines whose visual
+ * hierarchy comes purely from opacity/scale/blur (never font size, so the layout never reflows as
+ * the active line changes), and a per-word left-to-right sweep with a small sparkle accent on the
+ * active line. A word-synced line (Radiant, or an OpenSubsonic `songLyrics` v2 response) carries
+ * real per-word timestamps and sweeps off those directly; every other source is line-only and the
+ * active line just lights up fully instead — an earlier version synthesized a pseudo-sweep
+ * proportionally by character count (the way iOS does for its own plain-LRC lines), but the
+ * guessed pacing never actually lined up with the words being sung and just looked buggy, so it
+ * was dropped. The "Word-by-word"/"Line-by-line" status pill reflects which one actually
+ * happened.
  */
 @Composable
 fun PlayerLyricsView(
@@ -155,12 +159,16 @@ private fun StatusBadges(
     // up to 3 pills (source + word-timing + AI-synthesized) can appear at once, and without this
     // a too-narrow Row squeezed the last pill's Text down to a width so tight its label wrapped
     // one word per line, making the pill render tall/portrait instead of its normal flat shape.
+    // Center-aligned since the source/mode pills (which carry a caption line inside them) are
+    // taller than the plain single-line AI-synthesized pill.
     Row(
         modifier = modifier.horizontalScroll(rememberScrollState()),
-        horizontalArrangement = Arrangement.spacedBy(6.dp)
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
+        val sourceCaption = stringResource(id = R.string.player_lyrics_pill_label_source)
         if (source == LyricsSourceKind.RADIANT) {
-            RadiantBadgePill()
+            RadiantBadgePill(caption = sourceCaption)
         } else {
             val (icon, label) = when (source) {
                 LyricsSourceKind.NAVIDROME -> Icons.Filled.Dns to stringResource(id = R.string.player_lyrics_source_server)
@@ -168,13 +176,14 @@ private fun StatusBadges(
                 LyricsSourceKind.LOCAL -> Icons.Filled.CloudDownload to "Cached"
                 LyricsSourceKind.RADIANT -> Icons.Filled.AutoAwesome to "Radiant Lyrics"
             }
-            StatusBadgePill(icon = icon, label = label)
+            StatusBadgePill(icon = icon, label = label, caption = sourceCaption)
         }
         if (isSynced) {
+            val modeCaption = stringResource(id = R.string.player_lyrics_pill_label_mode)
             if (hasWordTiming) {
-                StatusBadgePill(icon = Icons.Filled.GraphicEq, label = "Word-by-word")
+                StatusBadgePill(icon = Icons.Filled.GraphicEq, label = "Word-by-word", caption = modeCaption)
             } else {
-                StatusBadgePill(icon = Icons.Filled.FormatAlignLeft, label = "Line-by-line")
+                StatusBadgePill(icon = Icons.Filled.FormatAlignLeft, label = "Line-by-line", caption = modeCaption)
             }
         }
         if (isAiSynthesized) {
@@ -183,56 +192,88 @@ private fun StatusBadges(
     }
 }
 
+/** [caption] ("Source"/"Mode"), when given, renders as a tiny line stacked inside the same pill
+ *  background above the icon/label — not floating above the pill in its own transparent space —
+ *  so a bare "Server" or "Word-by-word" value doesn't read ambiguously as the other pill's kind of
+ *  value at a glance. Omitted (plain single-line pill) for values that are unambiguous on their
+ *  own, like "AI Synthesize". */
 @Composable
-private fun StatusBadgePill(icon: ImageVector, label: String) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
+private fun StatusBadgePill(icon: ImageVector, label: String, caption: String? = null) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(1.dp),
         modifier = Modifier
-            .clip(RoundedCornerShape(50))
+            .clip(RoundedCornerShape(12.dp))
             .background(Color.White.copy(alpha = 0.18f))
             .padding(horizontal = 10.dp, vertical = 5.dp)
     ) {
-        Icon(icon, contentDescription = null, tint = Color.White.copy(alpha = 0.85f), modifier = Modifier.size(12.dp))
-        Text(
-            text = label,
-            color = Color.White.copy(alpha = 0.85f),
-            fontSize = 11.sp,
-            fontWeight = FontWeight.SemiBold,
-            maxLines = 1,
-            softWrap = false
-        )
+        if (caption != null) {
+            Text(
+                text = caption,
+                color = Color.White.copy(alpha = 0.6f),
+                fontSize = 8.sp,
+                fontWeight = FontWeight.SemiBold,
+                letterSpacing = 0.4.sp,
+                maxLines = 1,
+                softWrap = false
+            )
+        }
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+            Icon(icon, contentDescription = null, tint = Color.White.copy(alpha = 0.85f), modifier = Modifier.size(12.dp))
+            Text(
+                text = label,
+                color = Color.White.copy(alpha = 0.85f),
+                fontSize = 11.sp,
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 1,
+                softWrap = false
+            )
+        }
     }
 }
 
 /** Mirrors iOS's `radiantBadge` — a purple/indigo gradient capsule instead of the plain
  *  translucent one every other source badge uses, so Radiant results read as the "premium" tier
  *  they are. No animated shimmer (iOS's BadgeShimmer) — a static gradient reads as intentional
- *  branding without needing a continuously-redrawing overlay for something this small. */
+ *  branding without needing a continuously-redrawing overlay for something this small. Same
+ *  in-pill [caption] treatment as [StatusBadgePill]. */
 @Composable
-private fun RadiantBadgePill() {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
+private fun RadiantBadgePill(caption: String? = null) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(1.dp),
         modifier = Modifier
-            .clip(RoundedCornerShape(50))
+            .clip(RoundedCornerShape(12.dp))
             .background(
                 Brush.horizontalGradient(
                     listOf(Color(0xFF9B59D0).copy(alpha = 0.55f), Color(0xFF5C6BC0).copy(alpha = 0.35f))
                 )
             )
-            .border(1.dp, Color(0xFF9B59D0).copy(alpha = 0.6f), RoundedCornerShape(50))
+            .border(1.dp, Color(0xFF9B59D0).copy(alpha = 0.6f), RoundedCornerShape(12.dp))
             .padding(horizontal = 10.dp, vertical = 5.dp)
     ) {
-        Icon(Icons.Filled.AutoAwesome, contentDescription = null, tint = Color.White.copy(alpha = 0.95f), modifier = Modifier.size(12.dp))
-        Text(
-            text = "Radiant Lyrics",
-            color = Color.White.copy(alpha = 0.95f),
-            fontSize = 11.sp,
-            fontWeight = FontWeight.SemiBold,
-            maxLines = 1,
-            softWrap = false
-        )
+        if (caption != null) {
+            Text(
+                text = caption,
+                color = Color.White.copy(alpha = 0.75f),
+                fontSize = 8.sp,
+                fontWeight = FontWeight.SemiBold,
+                letterSpacing = 0.4.sp,
+                maxLines = 1,
+                softWrap = false
+            )
+        }
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+            Icon(Icons.Filled.AutoAwesome, contentDescription = null, tint = Color.White.copy(alpha = 0.95f), modifier = Modifier.size(12.dp))
+            Text(
+                text = "Radiant Lyrics",
+                color = Color.White.copy(alpha = 0.95f),
+                fontSize = 11.sp,
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 1,
+                softWrap = false
+            )
+        }
     }
 }
 
@@ -315,13 +356,11 @@ private fun SyncedLyrics(content: LyricsContent.Synced, positionMs: Long, onSeek
         verticalArrangement = Arrangement.spacedBy(22.dp)
     ) {
         itemsIndexed(lines, key = { index, _ -> index }) { index, line ->
-            val nextStart = lines.getOrNull(index + 1)?.startMs ?: (line.startMs + 4000)
             LyricLineRow(
                 line = line,
                 distance = kotlin.math.abs(index - currentIndex),
                 isActive = index == currentIndex,
                 positionMs = positionMs,
-                nextStartMs = nextStart,
                 sparklesEnabled = sparklesEnabled,
                 onClick = { onSeek(line.startMs) }
             )
@@ -335,7 +374,6 @@ private fun LyricLineRow(
     distance: Int,
     isActive: Boolean,
     positionMs: Long,
-    nextStartMs: Int,
     sparklesEnabled: Boolean,
     onClick: () -> Unit
 ) {
@@ -375,10 +413,13 @@ private fun LyricLineRow(
         val words = line.words
         if (isActive && !words.isNullOrEmpty()) {
             RealWordSweepLine(words = words, positionMs = positionMs, sparklesEnabled = sparklesEnabled)
-        } else if (isActive) {
-            val fraction = ((positionMs - line.startMs).toFloat() / (nextStartMs - line.startMs).coerceAtLeast(1)).coerceIn(0f, 1f)
-            SweepLine(text = line.text, fraction = fraction, sparklesEnabled = sparklesEnabled)
         } else {
+            // No real per-word timing for this line (every source other than a word-synced
+            // Radiant/OpenSubsonic result) — the active line just lights up fully rather than
+            // faking a sweep proportionally by character count, which looked buggy in practice
+            // (the guessed pacing never actually lines up with the words being sung). Distance-0
+            // (i.e. the active line) already resolves alpha/scale/blur to 1f/1f/0dp below, so this
+            // is the same plain `Text` every non-active line gets, just fully bright/sharp.
             Text(
                 text = line.text,
                 color = Color.White.copy(alpha = animatedAlpha),
@@ -409,38 +450,6 @@ private fun RealWordSweepLine(words: List<LyricWord>, positionMs: Long, sparkles
                         ((positionMs - word.startMs).toFloat() / word.durationMs).coerceIn(0f, 1f)
                     } else 1f
                     SweepWord(word.text, fraction, sparklesEnabled)
-                }
-            }
-        }
-    }
-}
-
-/** Pseudo-word sweep for the active line — splits on whitespace and distributes [fraction]'s
- *  progress across words proportionally by character count (same math as iOS's
- *  `expandSyllable`/`pseudoWords`), rendering a dim base copy with a bright copy clipped to the
- *  swept width on top, since Compose has no built-in text-gradient-mask primitive. */
-@Composable
-private fun SweepLine(text: String, fraction: Float, sparklesEnabled: Boolean) {
-    val words = remember(text) { text.split(" ").filter { it.isNotEmpty() } }
-    val totalChars = remember(words) { words.sumOf { it.length }.coerceAtLeast(1) }
-    var cumulative = 0f
-    val activeWordIndex = words.indexOfFirst { word ->
-        cumulative += word.length.toFloat() / totalChars
-        fraction <= cumulative
-    }.let { if (it < 0) words.lastIndex else it }
-
-    FlowRow(
-        horizontalArrangement = Arrangement.spacedBy(6.dp)
-    ) {
-        words.forEachIndexed { index, word ->
-            when {
-                index < activeWordIndex -> Text(word, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 26.sp, lineHeight = 32.sp)
-                index > activeWordIndex -> Text(word, color = Color.White.copy(alpha = 0.4f), fontWeight = FontWeight.Bold, fontSize = 26.sp, lineHeight = 32.sp)
-                else -> {
-                    val wordStartCumulative = words.take(index).sumOf { it.length }.toFloat() / totalChars
-                    val wordSpan = word.length.toFloat() / totalChars
-                    val intraFraction = ((fraction - wordStartCumulative) / wordSpan.coerceAtLeast(0.0001f)).coerceIn(0f, 1f)
-                    SweepWord(word, intraFraction, sparklesEnabled)
                 }
             }
         }

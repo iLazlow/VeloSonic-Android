@@ -70,7 +70,11 @@
     <string name="settings_lyrics_source_lrclib_title">lrclib.net</string>
     <string name="settings_lyrics_source_lrclib_subtitle">Community-sourced lyrics only</string>
     <string name="player_lyrics_source_server">Server</string>
+    <string name="player_lyrics_pill_label_source">Source</string>
+    <string name="player_lyrics_pill_label_mode">Mode</string>
     <string name="settings_lyrics_section_sync">Lyrics Sync</string>
+    <string name="settings_lyrics_auto_sync_title">Auto-Sync Lyrics</string>
+    <string name="settings_lyrics_auto_sync_subtitle">Automatically fetch lyrics in the background for tracks that don\'t have them cached yet. Off by default — you can still sync manually below.</string>
     <string name="settings_lyrics_sync_description">Fetches lyrics in the background for offline playback, preferring your library\'s already-cached tracks first.</string>
     <string name="settings_lyrics_full_resync">Full Resync</string>
     <string name="settings_lyrics_full_resync_message">This re-checks lyrics for every track in your library, not just the ones never checked before.</string>

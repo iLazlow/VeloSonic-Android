@@ -70,7 +70,11 @@
     <string name="settings_lyrics_source_lrclib_title">lrclib.net</string>
     <string name="settings_lyrics_source_lrclib_subtitle">커뮤니티에서 제공한 가사만 사용해요</string>
     <string name="player_lyrics_source_server">서버</string>
+    <string name="player_lyrics_pill_label_source">소스</string>
+    <string name="player_lyrics_pill_label_mode">모드</string>
     <string name="settings_lyrics_section_sync">가사 동기화</string>
+    <string name="settings_lyrics_auto_sync_title">가사 자동 동기화</string>
+    <string name="settings_lyrics_auto_sync_subtitle">아직 캐시되지 않은 트랙의 가사를 백그라운드에서 자동으로 가져와요. 기본적으로 꺼져 있어요 — 아래에서 수동으로 동기화할 수 있어요.</string>
     <string name="settings_lyrics_sync_description">오프라인 재생을 위해 백그라운드에서 가사를 가져와요. 보관함에 이미 캐시된 트랙을 우선적으로 처리해요.</string>
     <string name="settings_lyrics_full_resync">전체 재동기화</string>
     <string name="settings_lyrics_full_resync_message">이전에 확인하지 않은 트랙뿐 아니라 보관함의 모든 트랙에 대해 가사를 다시 확인해요.</string>

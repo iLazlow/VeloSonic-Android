@@ -70,7 +70,11 @@
     <string name="settings_lyrics_source_lrclib_title">lrclib.net</string>
     <string name="settings_lyrics_source_lrclib_subtitle">Solo testi forniti dalla community</string>
     <string name="player_lyrics_source_server">Server</string>
+    <string name="player_lyrics_pill_label_source">Fonte</string>
+    <string name="player_lyrics_pill_label_mode">Modalità</string>
     <string name="settings_lyrics_section_sync">Sincronizzazione Testi</string>
+    <string name="settings_lyrics_auto_sync_title">Sincronizzazione Automatica Testi</string>
+    <string name="settings_lyrics_auto_sync_subtitle">Scarica automaticamente i testi in background per i brani che non ne hanno ancora in cache. Disattivata per impostazione predefinita — puoi comunque sincronizzare manualmente qui sotto.</string>
     <string name="settings_lyrics_sync_description">Scarica i testi in background per la riproduzione offline, dando priorità ai brani già presenti nella cache della libreria.</string>
     <string name="settings_lyrics_full_resync">Risincronizzazione Completa</string>
     <string name="settings_lyrics_full_resync_message">Ricontrolla i testi per ogni brano della libreria, non solo quelli mai controllati prima.</string>

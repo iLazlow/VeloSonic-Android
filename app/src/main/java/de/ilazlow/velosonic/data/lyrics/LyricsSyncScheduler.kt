@@ -44,6 +44,15 @@ object LyricsSyncScheduler {
         )
     }
 
+    /** Stops the periodic background backfill — called when the user turns off the Lyrics
+     *  "Auto-Sync" setting (see [de.ilazlow.velosonic.VeloSonicApp.onCreate], which observes that
+     *  setting and calls [schedule]/this reactively). Doesn't touch the manual "Sync Now" work
+     *  ([LYRICS_SYNC_MANUAL_WORK_NAME]/[CHUNK_WORK_NAME] via [cancel]) — that's a separate,
+     *  explicit user action the auto-sync toggle has no say over. */
+    fun cancelPeriodic(context: Context) {
+        WorkManager.getInstance(context).cancelUniqueWork(PERIODIC_WORK_NAME)
+    }
+
     /** User-triggered from the Lyrics Sync section — mirrors `LyricsSyncManager.startSync`.
      *  [ExistingWorkPolicy.KEEP] so tapping Sync while one's already running just keeps observing
      *  it instead of spawning a duplicate. Marked [LYRICS_SYNC_KEY_MANUAL] so it chains through

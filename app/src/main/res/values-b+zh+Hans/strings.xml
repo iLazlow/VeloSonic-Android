@@ -70,7 +70,11 @@
     <string name="settings_lyrics_source_lrclib_title">lrclib.net</string>
     <string name="settings_lyrics_source_lrclib_subtitle">仅使用社区提供的歌词</string>
     <string name="player_lyrics_source_server">服务器</string>
+    <string name="player_lyrics_pill_label_source">来源</string>
+    <string name="player_lyrics_pill_label_mode">模式</string>
     <string name="settings_lyrics_section_sync">歌词同步</string>
+    <string name="settings_lyrics_auto_sync_title">自动同步歌词</string>
+    <string name="settings_lyrics_auto_sync_subtitle">自动在后台为尚未缓存歌词的曲目获取歌词。默认关闭——你仍可以在下方手动同步。</string>
     <string name="settings_lyrics_sync_description">在后台获取歌词以供离线播放，优先处理音乐库中已缓存的曲目。</string>
     <string name="settings_lyrics_full_resync">完全重新同步</string>
     <string name="settings_lyrics_full_resync_message">这会重新检查音乐库中每首歌曲的歌词，而不仅是从未检查过的歌曲。</string>

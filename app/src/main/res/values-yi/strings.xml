@@ -70,7 +70,11 @@
     <string name="settings_lyrics_source_lrclib_title">lrclib.net</string>
     <string name="settings_lyrics_source_lrclib_subtitle">נאָר ליריקס פֿון דער קהילה</string>
     <string name="player_lyrics_source_server">סערווער</string>
+    <string name="player_lyrics_pill_label_source">מקור</string>
+    <string name="player_lyrics_pill_label_mode">מאָדוס</string>
     <string name="settings_lyrics_section_sync">ליריקס־סינכראָניזאַציע</string>
+    <string name="settings_lyrics_auto_sync_title">אויטאָמאַטיש סינכראָניזירן ליריקס</string>
+    <string name="settings_lyrics_auto_sync_subtitle">ברענגט אויטאָמאַטיש ליריקס אין הינטערגרונט פֿאַר טרעקן וואָס האָבן נאָך נישט קיין קאַשירטע. באַשטימט אויס לויט ברירת-מחדל — איר קענט נאָך אַלץ סינכראָניזירן מיט דער האַנט אונטן.</string>
     <string name="settings_lyrics_sync_description">ברענגט ליריקס אין הינטערגרונט פֿאַר אָפֿליין־אָפּשפּילונג, מיט אַ פּרעפֿערענץ פֿאַר די טרעקן וואָס זענען שוין קאַשירט אין דײַן ביבליאָטעק.</string>
     <string name="settings_lyrics_full_resync">פֿולע רי־סינכראָניזאַציע</string>
     <string name="settings_lyrics_full_resync_message">דאָס טשעקט ווידער איבער ליריקס פֿאַר יעדן טרעק אין דײַן ביבליאָטעק, נישט נאָר די וואָס זענען קיין מאָל פֿריער נישט געטשעקט געוואָרן.</string>

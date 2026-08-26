@@ -70,7 +70,11 @@
     <string name="settings_lyrics_source_lrclib_title">lrclib.net</string>
     <string name="settings_lyrics_source_lrclib_subtitle">Paroles communautaires uniquement</string>
     <string name="player_lyrics_source_server">Serveur</string>
+    <string name="player_lyrics_pill_label_source">Source</string>
+    <string name="player_lyrics_pill_label_mode">Mode</string>
     <string name="settings_lyrics_section_sync">Synchronisation des paroles</string>
+    <string name="settings_lyrics_auto_sync_title">Synchronisation automatique des paroles</string>
+    <string name="settings_lyrics_auto_sync_subtitle">Récupère automatiquement les paroles en arrière-plan pour les titres qui n\'en ont pas encore en cache. Désactivé par défaut — vous pouvez toujours synchroniser manuellement ci-dessous.</string>
     <string name="settings_lyrics_sync_description">Récupère les paroles en arrière-plan pour la lecture hors ligne, en privilégiant d\'abord les titres déjà en cache dans votre bibliothèque.</string>
     <string name="settings_lyrics_full_resync">Resynchronisation complète</string>
     <string name="settings_lyrics_full_resync_message">Revérifie les paroles de tous les titres de votre bibliothèque, pas seulement ceux jamais vérifiés.</string>

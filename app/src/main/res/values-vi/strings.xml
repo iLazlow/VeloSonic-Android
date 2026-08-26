@@ -70,7 +70,11 @@
     <string name="settings_lyrics_source_lrclib_title">lrclib.net</string>
     <string name="settings_lyrics_source_lrclib_subtitle">Chỉ dùng lời bài hát từ cộng đồng</string>
     <string name="player_lyrics_source_server">Máy chủ</string>
+    <string name="player_lyrics_pill_label_source">Nguồn</string>
+    <string name="player_lyrics_pill_label_mode">Chế độ</string>
     <string name="settings_lyrics_section_sync">Đồng bộ lời bài hát</string>
+    <string name="settings_lyrics_auto_sync_title">Tự động đồng bộ lời bài hát</string>
+    <string name="settings_lyrics_auto_sync_subtitle">Tự động tải lời bài hát ở chế độ nền cho các bài hát chưa có lời được lưu đệm. Mặc định tắt — bạn vẫn có thể đồng bộ thủ công bên dưới.</string>
     <string name="settings_lyrics_sync_description">Tải lời bài hát ở chế độ nền để phát ngoại tuyến, ưu tiên các bài hát đã được lưu đệm trong thư viện của bạn trước.</string>
     <string name="settings_lyrics_full_resync">Đồng bộ lại toàn bộ</string>
     <string name="settings_lyrics_full_resync_message">Thao tác này sẽ kiểm tra lại lời bài hát cho mọi bài hát trong thư viện của bạn, không chỉ những bài chưa từng được kiểm tra.</string>

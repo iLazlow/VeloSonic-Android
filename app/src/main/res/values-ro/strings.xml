@@ -70,7 +70,11 @@
     <string name="settings_lyrics_source_lrclib_title">lrclib.net</string>
     <string name="settings_lyrics_source_lrclib_subtitle">Doar versuri din surse comunitare</string>
     <string name="player_lyrics_source_server">Server</string>
+    <string name="player_lyrics_pill_label_source">Sursă</string>
+    <string name="player_lyrics_pill_label_mode">Mod</string>
     <string name="settings_lyrics_section_sync">Sincronizare versuri</string>
+    <string name="settings_lyrics_auto_sync_title">Sincronizare automată a versurilor</string>
+    <string name="settings_lyrics_auto_sync_subtitle">Preia automat versuri în fundal pentru melodiile care nu le au încă stocate în cache. Dezactivat implicit — poți sincroniza manual mai jos.</string>
     <string name="settings_lyrics_sync_description">Preia versuri în fundal pentru redare offline, acordând prioritate melodiilor deja stocate în cache din biblioteca ta.</string>
     <string name="settings_lyrics_full_resync">Resincronizare completă</string>
     <string name="settings_lyrics_full_resync_message">Aceasta reverifică versurile pentru fiecare melodie din biblioteca ta, nu doar pentru cele neverificate până acum.</string>

@@ -70,7 +70,11 @@
     <string name="settings_lyrics_source_lrclib_title">lrclib.net</string>
     <string name="settings_lyrics_source_lrclib_subtitle">Csak közösségi forrásból származó dalszövegek</string>
     <string name="player_lyrics_source_server">Szerver</string>
+    <string name="player_lyrics_pill_label_source">Forrás</string>
+    <string name="player_lyrics_pill_label_mode">Mód</string>
     <string name="settings_lyrics_section_sync">Dalszöveg-szinkronizálás</string>
+    <string name="settings_lyrics_auto_sync_title">Dalszövegek automatikus szinkronizálása</string>
+    <string name="settings_lyrics_auto_sync_subtitle">Automatikusan letölti a háttérben azon számok dalszövegeit, amelyekhez még nincs gyorsítótárazva. Alapértelmezés szerint ki van kapcsolva — lent kézzel is szinkronizálhatod.</string>
     <string name="settings_lyrics_sync_description">A háttérben tölti le a dalszövegeket az offline lejátszáshoz, előnyben részesítve a könyvtáradban már gyorsítótárazott számokat.</string>
     <string name="settings_lyrics_full_resync">Teljes újraszinkronizálás</string>
     <string name="settings_lyrics_full_resync_message">Ez újraellenőrzi a dalszövegeket a könyvtárad minden számához, nem csak azokét, amiket még sosem ellenőriztél.</string>

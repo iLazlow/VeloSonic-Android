@@ -70,7 +70,11 @@
     <string name="settings_lyrics_source_lrclib_title">lrclib.net</string>
     <string name="settings_lyrics_source_lrclib_subtitle">Apenas letras fornecidas pela comunidade</string>
     <string name="player_lyrics_source_server">Servidor</string>
+    <string name="player_lyrics_pill_label_source">Fonte</string>
+    <string name="player_lyrics_pill_label_mode">Modo</string>
     <string name="settings_lyrics_section_sync">Sincronização de letras</string>
+    <string name="settings_lyrics_auto_sync_title">Sincronização Automática de Letras</string>
+    <string name="settings_lyrics_auto_sync_subtitle">Obtém letras automaticamente em segundo plano para faixas que ainda não as têm em cache. Desativado por predefinição — ainda pode sincronizar manualmente abaixo.</string>
     <string name="settings_lyrics_sync_description">Obtém letras em segundo plano para reprodução offline, dando prioridade às faixas já em cache na sua biblioteca.</string>
     <string name="settings_lyrics_full_resync">Ressincronização completa</string>
     <string name="settings_lyrics_full_resync_message">Isto volta a verificar as letras de todas as faixas da sua biblioteca, não apenas as que nunca foram verificadas.</string>

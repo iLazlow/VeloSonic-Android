@@ -70,7 +70,11 @@
     <string name="settings_lyrics_source_lrclib_title">lrclib.net</string>
     <string name="settings_lyrics_source_lrclib_subtitle">Pouze texty od komunity</string>
     <string name="player_lyrics_source_server">Server</string>
+    <string name="player_lyrics_pill_label_source">Zdroj</string>
+    <string name="player_lyrics_pill_label_mode">Režim</string>
     <string name="settings_lyrics_section_sync">Synchronizace textů</string>
+    <string name="settings_lyrics_auto_sync_title">Automatická synchronizace textů</string>
+    <string name="settings_lyrics_auto_sync_subtitle">Automaticky stahuje texty na pozadí pro skladby, které je ještě nemají uložené v mezipaměti. Ve výchozím nastavení vypnuto — níže můžete synchronizovat i ručně.</string>
     <string name="settings_lyrics_sync_description">Stahuje texty písní na pozadí pro offline přehrávání, přednostně u skladeb, které už máte v knihovně uložené v mezipaměti.</string>
     <string name="settings_lyrics_full_resync">Úplná resynchronizace</string>
     <string name="settings_lyrics_full_resync_message">Znovu zkontroluje texty u všech skladeb v knihovně, ne jen u těch dosud nezkontrolovaných.</string>

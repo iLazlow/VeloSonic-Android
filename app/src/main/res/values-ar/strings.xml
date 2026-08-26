@@ -70,7 +70,11 @@
     <string name="settings_lyrics_source_lrclib_title">lrclib.net</string>
     <string name="settings_lyrics_source_lrclib_subtitle">كلمات من مصادر المجتمع فقط</string>
     <string name="player_lyrics_source_server">الخادم</string>
+    <string name="player_lyrics_pill_label_source">المصدر</string>
+    <string name="player_lyrics_pill_label_mode">الوضع</string>
     <string name="settings_lyrics_section_sync">مزامنة الكلمات</string>
+    <string name="settings_lyrics_auto_sync_title">مزامنة الكلمات تلقائيًا</string>
+    <string name="settings_lyrics_auto_sync_subtitle">يجلب الكلمات تلقائيًا في الخلفية للمقطوعات التي لا تحتوي عليها مخزّنة بعد. معطّل افتراضيًا — يمكنك المزامنة يدويًا أدناه.</string>
     <string name="settings_lyrics_sync_description">يجلب الكلمات في الخلفية للتشغيل دون اتصال، مع إعطاء الأولوية للمقطوعات المخزنة مؤقتًا في مكتبتك.</string>
     <string name="settings_lyrics_full_resync">إعادة مزامنة كاملة</string>
     <string name="settings_lyrics_full_resync_message">يعيد هذا فحص الكلمات لكل مقطوعة في مكتبتك، وليس فقط تلك التي لم يتم فحصها من قبل.</string>

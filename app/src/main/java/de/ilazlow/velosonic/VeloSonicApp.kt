@@ -11,11 +11,18 @@ import coil3.disk.DiskCache
 import coil3.network.okhttp.OkHttpNetworkFetcherFactory
 import coil3.serviceLoaderEnabled
 import dagger.hilt.android.HiltAndroidApp
+import de.ilazlow.velosonic.data.datastore.LyricsSettingsStore
 import de.ilazlow.velosonic.data.lyrics.LyricsSyncScheduler
 import de.ilazlow.velosonic.data.network.OfflineModeInterceptor
 import de.ilazlow.velosonic.data.sync.RecentPlayFreshnessScheduler
 import de.ilazlow.velosonic.data.sync.SyncScheduler
+import de.ilazlow.velosonic.di.ApplicationScope
 import de.ilazlow.velosonic.playback.PlaybackController
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onEach
 import okhttp3.OkHttpClient
 import java.io.File
 import java.util.concurrent.TimeUnit
@@ -42,6 +49,13 @@ class VeloSonicApp : Application(), Configuration.Provider, SingletonImageLoader
      *  than inheriting it for free. */
     @Inject
     lateinit var offlineModeInterceptor: OfflineModeInterceptor
+
+    @Inject
+    lateinit var lyricsSettingsStore: LyricsSettingsStore
+
+    @Inject
+    @ApplicationScope
+    lateinit var appScope: CoroutineScope
 
     override val workManagerConfiguration: Configuration
         get() = Configuration.Builder().setWorkerFactory(workerFactory).build()
@@ -97,7 +111,18 @@ class VeloSonicApp : Application(), Configuration.Provider, SingletonImageLoader
         // now that workerFactory is guaranteed to be injected.
         WorkManager.initialize(this, workManagerConfiguration)
         SyncScheduler.schedule(this)
-        LyricsSyncScheduler.schedule(this)
+        // Lyrics auto-sync defaults off (unlike the general library sync) — a per-track lyrics
+        // lookup across a large library is real background network+battery cost, so it's an
+        // explicit opt-in (Settings → Lyrics). Reactive rather than a one-shot read at startup so
+        // toggling the setting mid-session actually starts/stops the periodic worker immediately,
+        // not just on the next app launch.
+        lyricsSettingsStore.settings
+            .map { it.lyricsAutoSyncEnabled }
+            .distinctUntilChanged()
+            .onEach { enabled ->
+                if (enabled) LyricsSyncScheduler.schedule(this) else LyricsSyncScheduler.cancelPeriodic(this)
+            }
+            .launchIn(appScope)
         RecentPlayFreshnessScheduler.schedule(this)
         // Resume-on-launch: binds the playback service immediately (rather than waiting for the
         // user's first explicit command) if — and only if — a queue was actually saved last

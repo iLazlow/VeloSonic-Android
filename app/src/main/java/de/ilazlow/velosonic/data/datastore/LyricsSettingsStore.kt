@@ -26,7 +26,13 @@ data class LyricsSettings(
     // Off by default — enabling this sends the request to a server-side AI model, kept as an
     // explicit opt-in rather than bundled into the general enable toggle (mirrors iOS's
     // deliberately separate Settings section for the same disclosure reason).
-    val radiantLyricsAiSynthesizeEnabled: Boolean = false
+    val radiantLyricsAiSynthesizeEnabled: Boolean = false,
+    // Off by default, unlike the general library sync — a per-track lyrics lookup across a large
+    // library means real background network+battery cost (see LyricsSyncWorker's doc comment on
+    // why it's even batched/rate-limited in the first place), so this is an explicit opt-in
+    // rather than something that just silently starts happening for everyone. See
+    // [VeloSonicApp.onCreate] for where this actually gates [LyricsSyncScheduler].
+    val lyricsAutoSyncEnabled: Boolean = false
 )
 
 @Singleton
@@ -39,6 +45,7 @@ class LyricsSettingsStore @Inject constructor(
         val RADIANT_ROMANIZATION = booleanPreferencesKey("radiant_lyrics_romanization")
         val RADIANT_SPARKLES = booleanPreferencesKey("radiant_lyrics_sparkles_enabled")
         val RADIANT_AI_SYNTHESIZE = booleanPreferencesKey("radiant_lyrics_ai_synthesize_enabled")
+        val AUTO_SYNC = booleanPreferencesKey("lyrics_auto_sync_enabled")
     }
 
     val settings: Flow<LyricsSettings> = context.lyricsSettingsDataStore.data.map { prefs ->
@@ -48,7 +55,8 @@ class LyricsSettingsStore @Inject constructor(
             radiantLyricsEnabled = prefs[Keys.RADIANT_ENABLED] ?: true,
             radiantLyricsRomanization = prefs[Keys.RADIANT_ROMANIZATION] ?: false,
             radiantLyricsSparklesEnabled = prefs[Keys.RADIANT_SPARKLES] ?: true,
-            radiantLyricsAiSynthesizeEnabled = prefs[Keys.RADIANT_AI_SYNTHESIZE] ?: false
+            radiantLyricsAiSynthesizeEnabled = prefs[Keys.RADIANT_AI_SYNTHESIZE] ?: false,
+            lyricsAutoSyncEnabled = prefs[Keys.AUTO_SYNC] ?: false
         )
     }
 
@@ -70,5 +78,9 @@ class LyricsSettingsStore @Inject constructor(
 
     suspend fun setRadiantLyricsAiSynthesizeEnabled(enabled: Boolean) {
         context.lyricsSettingsDataStore.edit { it[Keys.RADIANT_AI_SYNTHESIZE] = enabled }
+    }
+
+    suspend fun setLyricsAutoSyncEnabled(enabled: Boolean) {
+        context.lyricsSettingsDataStore.edit { it[Keys.AUTO_SYNC] = enabled }
     }
 }
