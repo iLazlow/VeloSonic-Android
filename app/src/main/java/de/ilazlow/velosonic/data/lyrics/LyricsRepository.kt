@@ -15,8 +15,13 @@ import de.ilazlow.velosonic.data.network.dto.StructuredLyricsDto
 import de.ilazlow.velosonic.data.network.dto.StructuredLyricsLineDto
 import de.ilazlow.velosonic.data.network.SubsonicApi
 import de.ilazlow.velosonic.data.network.SubsonicUrlBuilder
+import de.ilazlow.velosonic.di.ApplicationScope
 import de.ilazlow.velosonic.domain.supportsOpenSubsonicExtensions
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.first
+import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -36,8 +41,24 @@ class LyricsRepository @Inject constructor(
     private val coverArtUrlResolver: CoverArtUrlResolver,
     private val trackDao: TrackDao,
     private val lyricsSettingsStore: LyricsSettingsStore,
-    private val radiantCacheStore: RadiantLyricsCacheStore
+    private val radiantCacheStore: RadiantLyricsCacheStore,
+    @ApplicationScope private val appScope: CoroutineScope
 ) {
+    /** In-memory dedup for Radiant lookups, keyed by the same cache key [fetchRadiant] computes —
+     *  survives Player-screen/ViewModel recreation, unlike [radiantCacheStore]'s on-disk cache
+     *  (only ever written for word-synced results — see [fetchRadiant]'s own doc comment) and
+     *  unlike PlayerViewModel.lyrics's `WhileSubscribed(5_000)` StateFlow, which restarts this
+     *  whole fetch from scratch every time the Player screen resubscribes after any 5+ second gap
+     *  (e.g. repeated background/foreground cycling while the same song keeps playing). Without
+     *  this, a song Radiant only has line-level data for (nothing durable to cache) got re-fetched
+     *  from the network on every single resubscription — confirmed live: ~50 requests for the same
+     *  song within 2 minutes. A [Deferred] (not a plain result map) also coalesces genuinely
+     *  concurrent calls for the same key into one network request. Deliberately never evicted for
+     *  the life of the process, including a null (no-lyrics-found) or failed result — Radiant's
+     *  answer for a given track doesn't change, and the cost of a stale failure (occasionally
+     *  needing an app restart to retry after a transient network blip) is far smaller than the
+     *  request flood this fixes. */
+    private val radiantResultsByKey = ConcurrentHashMap<String, Deferred<LyricsContent?>>()
     private fun url(config: ServerConfigEntity, endpoint: String, extra: Map<String, String> = emptyMap()) =
         SubsonicUrlBuilder.build(config.host, endpoint, config.username, config.token, config.salt, extraParams = extra)
 
@@ -112,7 +133,13 @@ class LyricsRepository @Inject constructor(
     private suspend fun fetchRadiant(track: TrackEntity, romanize: Boolean, synthesize: Boolean): LyricsContent? {
         val cacheKey = "${track.id}_${if (romanize) "romanized" else "plain"}${if (synthesize) "_ai" else ""}"
         radiantCacheStore.read(cacheKey)?.let { return LyricsContent.Synced(it, LyricsSourceKind.RADIANT, isAiSynthesized = synthesize) }
+        val deferred = radiantResultsByKey.getOrPut(cacheKey) {
+            appScope.async { fetchRadiantFromNetwork(track, cacheKey, romanize, synthesize) }
+        }
+        return deferred.await()
+    }
 
+    private suspend fun fetchRadiantFromNetwork(track: TrackEntity, cacheKey: String, romanize: Boolean, synthesize: Boolean): LyricsContent? {
         return try {
             val response = radiantLyricsApi.get(
                 tokenId = BuildConfig.RADIANT_LYRICS_API_ID,
